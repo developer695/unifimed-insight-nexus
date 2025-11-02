@@ -10,6 +10,9 @@ import {
   Settings,
   Activity,
   BarChart3,
+  Mic,
+  Tag,
+  Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -33,6 +36,11 @@ const navItems: NavItem[] = [
     icon: LayoutDashboard,
   },
   {
+    title: "Voice Engine",
+    href: "/voice-engine",
+    icon: Mic,
+  },
+  {
     title: "Contact Intelligence",
     href: "/contact-intelligence",
     icon: Users,
@@ -48,9 +56,19 @@ const navItems: NavItem[] = [
     icon: Calendar,
   },
   {
+    title: "SEO Keywords",
+    href: "/seo-keywords",
+    icon: Tag,
+  },
+  {
     title: "Content Engine",
     href: "/content",
     icon: FileText,
+  },
+  {
+    title: "Ad Campaigns",
+    href: "/ad-campaigns",
+    icon: Target,
   },
   {
     title: "System Health",

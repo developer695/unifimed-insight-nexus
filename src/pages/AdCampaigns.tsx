@@ -1,0 +1,221 @@
+import { StatCard } from "@/components/dashboard/StatCard";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DollarSign, MousePointerClick, TrendingUp, Target, Download } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+
+const performanceTrendData = [
+  { date: "Jan 1", spend: 2100, conversions: 34, roas: 3.2 },
+  { date: "Jan 8", spend: 2400, conversions: 41, roas: 3.5 },
+  { date: "Jan 15", spend: 2200, conversions: 38, roas: 3.4 },
+  { date: "Jan 22", spend: 2600, conversions: 48, roas: 3.8 },
+  { date: "Jan 29", spend: 2500, conversions: 45, roas: 3.7 },
+  { date: "Feb 5", spend: 2800, conversions: 52, roas: 4.1 },
+];
+
+const platformComparisonData = [
+  { platform: "Google Ads", spend: 15400, clicks: 4234, conversions: 267, cpc: 3.64, roas: 3.8 },
+  { platform: "LinkedIn Ads", spend: 8900, clicks: 1876, conversions: 178, cpc: 4.74, roas: 4.2 },
+];
+
+const googleCampaignsData = [
+  { name: "Healthcare IT Solutions - Search", spend: 5200, impressions: 124000, ctr: 4.2, conversions: 89, cpa: 58.43 },
+  { name: "HIPAA Compliance Guide - Display", spend: 3800, impressions: 456000, ctr: 1.8, conversions: 67, cpa: 56.72 },
+  { name: "Hospital Cost Reduction - Retargeting", spend: 2900, impressions: 89000, ctr: 3.9, conversions: 54, cpa: 53.70 },
+  { name: "Medical Device Security - Search", spend: 3500, impressions: 98000, ctr: 4.5, conversions: 57, cpa: 61.40 },
+];
+
+export default function AdCampaigns() {
+  return (
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Ad Campaigns</h1>
+          <p className="text-muted-foreground mt-1">Agents 6-8 • Google Ads, LinkedIn, and optimization analytics</p>
+        </div>
+        <Button>
+          <Download className="h-4 w-4 mr-2" />
+          Export Report
+        </Button>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Total Ad Spend"
+          value="$24.3K"
+          change={12.5}
+          icon={<DollarSign className="h-5 w-5" />}
+          subtitle="Last 30 days"
+        />
+        <StatCard
+          title="Total Conversions"
+          value="445"
+          change={18.7}
+          icon={<Target className="h-5 w-5" />}
+          subtitle="Across all campaigns"
+        />
+        <StatCard
+          title="Avg ROAS"
+          value="3.9x"
+          change={8.3}
+          icon={<TrendingUp className="h-5 w-5" />}
+          subtitle="$94.8K revenue"
+        />
+        <StatCard
+          title="Avg Cost/Conv"
+          value="$54.61"
+          change={-4.2}
+          icon={<MousePointerClick className="h-5 w-5" />}
+          subtitle="Improving efficiency"
+        />
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Performance Trend</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={performanceTrendData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="date" className="text-xs" />
+                <YAxis yAxisId="left" className="text-xs" />
+                <YAxis yAxisId="right" orientation="right" className="text-xs" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "0.5rem",
+                  }}
+                />
+                <Legend />
+                <Line yAxisId="left" type="monotone" dataKey="spend" name="Spend ($)" stroke="hsl(var(--chart-1))" strokeWidth={2} />
+                <Line yAxisId="left" type="monotone" dataKey="conversions" name="Conversions" stroke="hsl(var(--chart-4))" strokeWidth={2} />
+                <Line yAxisId="right" type="monotone" dataKey="roas" name="ROAS (x)" stroke="hsl(var(--chart-2))" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Platform Comparison</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={platformComparisonData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="platform" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "0.5rem",
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="conversions" name="Conversions" fill="hsl(var(--chart-4))" />
+                <Bar dataKey="roas" name="ROAS (x)" fill="hsl(var(--chart-2))" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Campaigns Detail */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Campaign Performance Detail</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="google" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="google">Google Ads</TabsTrigger>
+              <TabsTrigger value="linkedin">LinkedIn Ads</TabsTrigger>
+              <TabsTrigger value="optimization">AI Optimization</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="google">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Campaign Name</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">Spend</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">Impressions</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">CTR %</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">Conversions</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">CPA</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {googleCampaignsData.map((campaign, index) => (
+                      <tr key={index} className="border-b border-border hover:bg-muted/50 transition-colors">
+                        <td className="py-3 px-4 font-medium">{campaign.name}</td>
+                        <td className="py-3 px-4 text-right">${campaign.spend.toLocaleString()}</td>
+                        <td className="py-3 px-4 text-right text-muted-foreground">{campaign.impressions.toLocaleString()}</td>
+                        <td className="py-3 px-4 text-right font-semibold text-primary">{campaign.ctr}%</td>
+                        <td className="py-3 px-4 text-right font-semibold">{campaign.conversions}</td>
+                        <td className="py-3 px-4 text-right text-muted-foreground">${campaign.cpa.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="linkedin">
+              <div className="text-center py-8 text-muted-foreground">
+                LinkedIn campaign details coming soon
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="optimization">
+              <div className="space-y-4">
+                <div className="p-4 bg-success/10 border border-success/20 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <TrendingUp className="h-5 w-5 text-success mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-success">Bid Optimization Applied</h4>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Increased bids by 15% on "Healthcare IT Solutions" campaign - CTR improved by 0.8%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Target className="h-5 w-5 text-primary mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-primary">Budget Reallocation Recommended</h4>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Shift $500 from Display to Search campaigns for better ROAS
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
