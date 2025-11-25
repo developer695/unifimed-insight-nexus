@@ -12,6 +12,7 @@ import SchedulingMeetings from "./pages/SchedulingMeetings";
 import SEOKeywords from "./pages/SEOKeywords";
 import ContentEngine from "./pages/ContentEngine";
 import AdCampaigns from "./pages/AdCampaigns";
+import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="seo-keywords" element={<SEOKeywords />} />
             <Route path="content" element={<ContentEngine />} />
             <Route path="ad-campaigns" element={<AdCampaigns />} />
+            <Route path="analytics" element={<Analytics />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
