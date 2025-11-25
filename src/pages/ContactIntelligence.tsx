@@ -3,7 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Users, CheckCircle, AlertCircle, TrendingUp, Search, Download } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import {
+  Users,
+  CheckCircle,
+  AlertCircle,
+  TrendingUp,
+  Search,
+  Download,
+  Upload,
+} from "lucide-react";
 import {
   PieChart,
   Pie,
@@ -74,19 +83,30 @@ const contactsTableData = [
   },
 ];
 
+
 export default function ContactIntelligence() {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Contact Intelligence</h1>
-          <p className="text-muted-foreground mt-1">Agent 1 • Email verification and contact enrichment</p>
+          <p className="text-muted-foreground mt-1">
+            Agent 1 • Email verification and contact enrichment
+          </p>
         </div>
-        <Button>
-          <Download className="h-4 w-4 mr-2" />
-          Export Data
-        </Button>
+        <div className="flex flex-row gap-4">
+          <Button onClick={() => navigate('/upload')}>
+            <Upload className="h-4 w-4 mr-2" />
+            Upload PDF
+          </Button>
+          <Button>
+            <Download className="h-4 w-4 mr-2" />
+            Export Data
+          </Button>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -135,7 +155,9 @@ export default function ContactIntelligence() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) =>
+                    `${name} ${(percent * 100).toFixed(0)}%`
+                  }
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
@@ -174,8 +196,16 @@ export default function ContactIntelligence() {
                   }}
                 />
                 <Legend />
-                <Bar dataKey="success" name="Success %" fill="hsl(var(--chart-4))" />
-                <Bar dataKey="failed" name="Failed %" fill="hsl(var(--chart-1))" />
+                <Bar
+                  dataKey="success"
+                  name="Success %"
+                  fill="hsl(var(--chart-4))"
+                />
+                <Bar
+                  dataKey="failed"
+                  name="Failed %"
+                  fill="hsl(var(--chart-1))"
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -200,19 +230,36 @@ export default function ContactIntelligence() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Name</th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Email</th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Status</th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Value Tier</th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Source</th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Date Added</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                    Name
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                    Email
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                    Status
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                    Value Tier
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                    Source
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                    Date Added
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {contactsTableData.map((contact, index) => (
-                  <tr key={index} className="border-b border-border hover:bg-muted/50 transition-colors">
+                  <tr
+                    key={index}
+                    className="border-b border-border hover:bg-muted/50 transition-colors"
+                  >
                     <td className="py-3 px-4 font-medium">{contact.name}</td>
-                    <td className="py-3 px-4 text-sm text-muted-foreground">{contact.email}</td>
+                    <td className="py-3 px-4 text-sm text-muted-foreground">
+                      {contact.email}
+                    </td>
                     <td className="py-3 px-4">
                       <Badge
                         variant="secondary"
@@ -227,14 +274,20 @@ export default function ContactIntelligence() {
                     </td>
                     <td className="py-3 px-4">
                       <Badge
-                        variant={contact.valueTier === "high" ? "default" : "secondary"}
-                        className={contact.valueTier === "high" ? "bg-primary" : ""}
+                        variant={
+                          contact.valueTier === "high" ? "default" : "secondary"
+                        }
+                        className={
+                          contact.valueTier === "high" ? "bg-primary" : ""
+                        }
                       >
                         {contact.valueTier}
                       </Badge>
                     </td>
                     <td className="py-3 px-4 text-sm">{contact.source}</td>
-                    <td className="py-3 px-4 text-sm text-muted-foreground">{contact.date}</td>
+                    <td className="py-3 px-4 text-sm text-muted-foreground">
+                      {contact.date}
+                    </td>
                   </tr>
                 ))}
               </tbody>

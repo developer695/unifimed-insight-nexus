@@ -2,7 +2,16 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FileText, Tag, TrendingUp, Target, Download, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import {
+  FileText,
+  Tag,
+  TrendingUp,
+  Target,
+  Download,
+  Search,
+  Upload,
+} from "lucide-react";
 import {
   ScatterChart,
   Scatter,
@@ -18,14 +27,54 @@ import {
 } from "recharts";
 
 const keywordVolumeData = [
-  { keyword: "HIPAA compliance", volume: 8100, competition: 68, category: "Regulatory" },
-  { keyword: "healthcare IT solutions", volume: 5400, competition: 72, category: "Commercial" },
-  { keyword: "medical device security", volume: 2900, competition: 45, category: "Clinical" },
-  { keyword: "hospital EMR system", volume: 6700, competition: 81, category: "Clinical" },
-  { keyword: "medicare reimbursement", volume: 4200, competition: 58, category: "Reimbursement" },
-  { keyword: "patient data privacy", volume: 3800, competition: 52, category: "Regulatory" },
-  { keyword: "healthcare cloud solutions", volume: 2100, competition: 39, category: "Commercial" },
-  { keyword: "clinical workflow automation", volume: 1800, competition: 42, category: "Clinical" },
+  {
+    keyword: "HIPAA compliance",
+    volume: 8100,
+    competition: 68,
+    category: "Regulatory",
+  },
+  {
+    keyword: "healthcare IT solutions",
+    volume: 5400,
+    competition: 72,
+    category: "Commercial",
+  },
+  {
+    keyword: "medical device security",
+    volume: 2900,
+    competition: 45,
+    category: "Clinical",
+  },
+  {
+    keyword: "hospital EMR system",
+    volume: 6700,
+    competition: 81,
+    category: "Clinical",
+  },
+  {
+    keyword: "medicare reimbursement",
+    volume: 4200,
+    competition: 58,
+    category: "Reimbursement",
+  },
+  {
+    keyword: "patient data privacy",
+    volume: 3800,
+    competition: 52,
+    category: "Regulatory",
+  },
+  {
+    keyword: "healthcare cloud solutions",
+    volume: 2100,
+    competition: 39,
+    category: "Commercial",
+  },
+  {
+    keyword: "clinical workflow automation",
+    volume: 1800,
+    competition: 42,
+    category: "Clinical",
+  },
 ];
 
 const discoveryTrendData = [
@@ -38,26 +87,66 @@ const discoveryTrendData = [
 ];
 
 const topKeywordsData = [
-  { keyword: "HIPAA compliance software", volume: 8100, competition: 68, category: "Regulatory", rank: 12 },
-  { keyword: "hospital EMR systems", volume: 6700, competition: 81, category: "Clinical", rank: 18 },
-  { keyword: "healthcare IT solutions", volume: 5400, competition: 72, category: "Commercial", rank: 15 },
-  { keyword: "medicare reimbursement rates", volume: 4200, competition: 58, category: "Reimbursement", rank: 22 },
-  { keyword: "patient data security", volume: 3800, competition: 52, category: "Regulatory", rank: 9 },
+  {
+    keyword: "HIPAA compliance software",
+    volume: 8100,
+    competition: 68,
+    category: "Regulatory",
+    rank: 12,
+  },
+  {
+    keyword: "hospital EMR systems",
+    volume: 6700,
+    competition: 81,
+    category: "Clinical",
+    rank: 18,
+  },
+  {
+    keyword: "healthcare IT solutions",
+    volume: 5400,
+    competition: 72,
+    category: "Commercial",
+    rank: 15,
+  },
+  {
+    keyword: "medicare reimbursement rates",
+    volume: 4200,
+    competition: 58,
+    category: "Reimbursement",
+    rank: 22,
+  },
+  {
+    keyword: "patient data security",
+    volume: 3800,
+    competition: 52,
+    category: "Regulatory",
+    rank: 9,
+  },
 ];
 
 export default function SEOKeywords() {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">SEO Keywords</h1>
-          <p className="text-muted-foreground mt-1">Agent 4 • Keyword extraction and search volume analysis</p>
+          <p className="text-muted-foreground mt-1">
+            Agent 4 • Keyword extraction and search volume analysis
+          </p>
         </div>
-        <Button>
-          <Download className="h-4 w-4 mr-2" />
-          Export Keywords
-        </Button>
+        <div className="flex flex-row gap-4">
+          <Button onClick={() => navigate("/keyword-upload")}>
+            <Upload className="h-4 w-4 mr-2" />
+            Upload keywords
+          </Button>
+          <Button>
+            <Download className="h-4 w-4 mr-2" />
+            Export Keywords
+          </Button>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -102,11 +191,16 @@ export default function SEOKeywords() {
             <ResponsiveContainer width="100%" height={300}>
               <ScatterChart>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="competition" name="Competition" unit="%" className="text-xs" />
+                <XAxis
+                  dataKey="competition"
+                  name="Competition"
+                  unit="%"
+                  className="text-xs"
+                />
                 <YAxis dataKey="volume" name="Volume" className="text-xs" />
                 <ZAxis range={[50, 400]} />
                 <Tooltip
-                  cursor={{ strokeDasharray: '3 3' }}
+                  cursor={{ strokeDasharray: "3 3" }}
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
                     border: "1px solid hsl(var(--border))",
@@ -114,7 +208,11 @@ export default function SEOKeywords() {
                   }}
                 />
                 <Legend />
-                <Scatter name="Keywords" data={keywordVolumeData} fill="hsl(var(--chart-1))" />
+                <Scatter
+                  name="Keywords"
+                  data={keywordVolumeData}
+                  fill="hsl(var(--chart-1))"
+                />
               </ScatterChart>
             </ResponsiveContainer>
           </CardContent>
@@ -138,7 +236,13 @@ export default function SEOKeywords() {
                   }}
                 />
                 <Legend />
-                <Line type="monotone" dataKey="keywords" name="New Keywords" stroke="hsl(var(--chart-2))" strokeWidth={2} />
+                <Line
+                  type="monotone"
+                  dataKey="keywords"
+                  name="New Keywords"
+                  stroke="hsl(var(--chart-2))"
+                  strokeWidth={2}
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -161,20 +265,43 @@ export default function SEOKeywords() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Keyword</th>
-                  <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">Search Volume</th>
-                  <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">Competition</th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Category</th>
-                  <th className="text-center py-3 px-4 font-medium text-sm text-muted-foreground">Current Rank</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                    Keyword
+                  </th>
+                  <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">
+                    Search Volume
+                  </th>
+                  <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">
+                    Competition
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                    Category
+                  </th>
+                  <th className="text-center py-3 px-4 font-medium text-sm text-muted-foreground">
+                    Current Rank
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {topKeywordsData.map((keyword, index) => (
-                  <tr key={index} className="border-b border-border hover:bg-muted/50 transition-colors">
+                  <tr
+                    key={index}
+                    className="border-b border-border hover:bg-muted/50 transition-colors"
+                  >
                     <td className="py-3 px-4 font-medium">{keyword.keyword}</td>
-                    <td className="py-3 px-4 text-right font-semibold">{keyword.volume.toLocaleString()}</td>
+                    <td className="py-3 px-4 text-right font-semibold">
+                      {keyword.volume.toLocaleString()}
+                    </td>
                     <td className="py-3 px-4 text-right">
-                      <span className={`font-medium ${keyword.competition < 50 ? "text-success" : keyword.competition < 70 ? "text-primary" : "text-warning"}`}>
+                      <span
+                        className={`font-medium ${
+                          keyword.competition < 50
+                            ? "text-success"
+                            : keyword.competition < 70
+                            ? "text-primary"
+                            : "text-warning"
+                        }`}
+                      >
                         {keyword.competition}%
                       </span>
                     </td>
@@ -183,7 +310,9 @@ export default function SEOKeywords() {
                         {keyword.category}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-center text-sm text-muted-foreground">#{keyword.rank}</td>
+                    <td className="py-3 px-4 text-center text-sm text-muted-foreground">
+                      #{keyword.rank}
+                    </td>
                   </tr>
                 ))}
               </tbody>
