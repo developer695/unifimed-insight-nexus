@@ -13,6 +13,7 @@ import SEOKeywords from "./pages/SEOKeywords";
 import ContentEngine from "./pages/ContentEngine";
 import AdCampaigns from "./pages/AdCampaigns";
 import Analytics from "./pages/Analytics";
+import CostROI from "./pages/CostROI";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="content" element={<ContentEngine />} />
             <Route path="ad-campaigns" element={<AdCampaigns />} />
             <Route path="analytics" element={<Analytics />} />
+            <Route path="roi" element={<CostROI />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
