@@ -1,4 +1,4 @@
-import { SignedUploadData, SaveFileRequest, UploadCategory } from '@/types/upload';
+import { SignedUploadData, SaveFileRequest, UploadCategory, FileRecord } from '@/types/upload';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -8,7 +8,6 @@ export async function generateSignedUrl(
     userId: string,
     userEmail: string
 ): Promise<{ success: boolean; data: SignedUploadData; message: string }> {
-    console.log('🔑 [generateSignedUrl] Request data:', { filename, category, userId, userEmail });
 
     const response = await fetch(`${BACKEND_URL}/api/generate-upload-url`, {
         method: 'POST',
@@ -30,7 +29,6 @@ export async function generateSignedUrl(
 }
 
 export async function saveFileRecord(fileData: SaveFileRequest): Promise<{ success: boolean; data: any; message: string }> {
-    console.log('💾 [saveFileRecord] Request data:', fileData);
 
     const response = await fetch(`${BACKEND_URL}/api/save-file`, {
         method: 'POST',
@@ -47,24 +45,6 @@ export async function saveFileRecord(fileData: SaveFileRequest): Promise<{ succe
 }
 
 export async function uploadToCloudinary(file: File, signedData: SignedUploadData): Promise<any> {
-    console.log('☁️ [uploadToCloudinary] Starting upload...');
-    console.log('☁️ [uploadToCloudinary] File details:', {
-        name: file.name,
-        size: file.size,
-        type: file.type
-    });
-
-    console.log('☁️ [uploadToCloudinary] Signed data received:', {
-        cloudName: signedData.cloudName,
-        apiKey: signedData.apiKey,
-        timestamp: signedData.timestamp,
-        signature: signedData.signature?.substring(0, 20) + '...', // Log partial signature for security
-        upload_preset: signedData.upload_preset,
-        public_id: signedData.public_id,
-        folder: signedData.folder,
-        resource_type: signedData.resource_type
-    });
-
     const formData = new FormData();
     formData.append('file', file);
     formData.append('api_key', signedData.apiKey);
@@ -75,7 +55,6 @@ export async function uploadToCloudinary(file: File, signedData: SignedUploadDat
     formData.append('folder', signedData.folder);
 
     // Log FormData contents (for debugging)
-    console.log('☁️ [uploadToCloudinary] FormData entries:');
     for (const [key, value] of formData.entries()) {
         if (key === 'file') {
             console.log(`  ${key}:`, (value as File).name, `(size: ${(value as File).size} bytes)`);
@@ -85,7 +64,6 @@ export async function uploadToCloudinary(file: File, signedData: SignedUploadDat
     }
 
     const uploadUrl = `https://api.cloudinary.com/v1_1/${signedData.cloudName}/raw/upload`;
-    console.log('☁️ [uploadToCloudinary] Upload URL:', uploadUrl);
 
     try {
         const response = await fetch(uploadUrl, {
@@ -93,8 +71,6 @@ export async function uploadToCloudinary(file: File, signedData: SignedUploadDat
             body: formData,
         });
 
-        console.log('☁️ [uploadToCloudinary] Response status:', response.status);
-        console.log('☁️ [uploadToCloudinary] Response status text:', response.statusText);
 
         if (!response.ok) {
             const errorText = await response.text();
@@ -103,12 +79,6 @@ export async function uploadToCloudinary(file: File, signedData: SignedUploadDat
         }
 
         const result = await response.json();
-        console.log('☁️ [uploadToCloudinary] Upload successful:', {
-            public_id: result.public_id,
-            secure_url: result.secure_url,
-            bytes: result.bytes,
-            format: result.format
-        });
 
         return result;
     } catch (error: any) {
@@ -118,8 +88,6 @@ export async function uploadToCloudinary(file: File, signedData: SignedUploadDat
 }
 
 export async function sendToN8nWebhook(webhookUrl: string, data: any): Promise<void> {
-    console.log('🔄 [sendToN8nWebhook] Sending to:', webhookUrl);
-    console.log('🔄 [sendToN8nWebhook] Data:', data);
 
     const response = await fetch(webhookUrl, {
         method: 'POST',
@@ -129,13 +97,76 @@ export async function sendToN8nWebhook(webhookUrl: string, data: any): Promise<v
         body: JSON.stringify(data),
     });
 
-    console.log('🔄 [sendToN8nWebhook] Response status:', response.status);
-
     if (!response.ok) {
         const errorText = await response.text();
         console.error('🔄 [sendToN8nWebhook] Error response:', errorText);
         throw new Error(`N8n webhook failed: ${response.statusText} - ${errorText}`);
     }
+}
 
-    console.log('🔄 [sendToN8nWebhook] Webhook sent successfully');
+
+export async function getUserFiles(
+    userId: string,
+    options?: {
+        status?: string;
+        category?: UploadCategory;
+    }
+): Promise<{ success: boolean; data: FileRecord[]; message: string }> {
+    console.log('📁 [getUserFiles] Fetching files for user:', userId);
+
+    const params = new URLSearchParams({ userId });
+
+    if (options?.status) {
+        params.append('status', options.status);
+    }
+
+    if (options?.category) {
+        params.append('category', options.category);
+    }
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/files?${params.toString()}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const result = await response.json();
+        console.log('📁 [getUserFiles] Response:', result);
+
+        return result;
+    } catch (error: any) {
+        console.error('📁 [getUserFiles] Error:', error);
+        return {
+            success: false,
+            data: [],
+            message: error.message || 'Failed to fetch files',
+        };
+    }
+}
+
+// Delete a file from Cloudinary and database
+export async function deleteUserFile(fileId: string): Promise<{ success: boolean; message: string }> {
+    console.log('🗑️ [deleteUserFile] Deleting file:', fileId);
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/files/${fileId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const result = await response.json();
+        console.log('🗑️ [deleteUserFile] Response:', result);
+
+        return result;
+    } catch (error: any) {
+        console.error('🗑️ [deleteUserFile] Error:', error);
+        return {
+            success: false,
+            message: error.message || 'Failed to delete file',
+        };
+    }
 }

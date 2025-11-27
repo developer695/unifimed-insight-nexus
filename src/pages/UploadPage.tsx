@@ -5,20 +5,37 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, FileText, CheckCircle, AlertCircle, X } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, FileText, CheckCircle, AlertCircle, X, Upload, FolderOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUpload } from "@/hooks/useUpload";
+import { useUserFiles } from "@/hooks/useUserFiles";
 import { UploadCategory } from "@/types/upload";
-import { UploadCategorySelector } from "@/uploads/UploadCategorySelector";
-import { FileUploadArea } from "@/uploads/FileUploadArea";
+
+
 import { useAuth } from "@/contexts/AuthContext";
+import { UploadCategorySelector } from "@/components/uploads/UploadCategorySelector";
+import { FileUploadArea } from "@/components/uploads/FileUploadArea";
+import { UserFilesList } from "@/components/uploads/Userfileslist";
 
 export default function UploadPage() {
   const [selectedCategory, setSelectedCategory] = useState<UploadCategory | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("upload");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
   const { uploadedFiles, uploadFile, removeFile, retryUpload, clearAllFiles } = useUpload();
+
+  // Fetch user's existing files
+  const {
+    files: userFiles,
+    isLoading: isLoadingFiles,
+    fetchFiles,
+    deleteFile: deleteUserFile,
+  } = useUserFiles({
+    userId: user?.id,
+    autoFetch: true,
+  });
 
   // Get user data from auth context
   const getUserData = () => {
@@ -26,7 +43,6 @@ export default function UploadPage() {
       throw new Error("User not authenticated");
     }
 
-    // Extract username from email (everything before @)
     const userName = user.email?.split('@')[0] || 'user';
 
     return {
@@ -52,7 +68,12 @@ export default function UploadPage() {
       for (const file of files) {
         await uploadFile(file, category, userData);
       }
-    } catch (error) {
+
+      // Refresh the files list after upload
+      setTimeout(() => {
+        fetchFiles();
+      }, 1000);
+    } catch (error: any) {
       toast({
         title: "Upload failed",
         description: error.message,
@@ -78,7 +99,7 @@ export default function UploadPage() {
     try {
       const userData = getUserData();
       await retryUpload(index, userData);
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Retry failed",
         description: error.message,
@@ -117,181 +138,239 @@ export default function UploadPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Upload Files</h1>
+            <h1 className="text-3xl font-bold">File Manager</h1>
             <p className="text-muted-foreground mt-1">
-              Upload PDF files for contact intelligence or rules processing
+              Upload and manage your PDF files
             </p>
             {user && (
               <p className="text-sm text-muted-foreground">
-                Uploading as: {user.email}
+                Signed in as: {user.email}
               </p>
             )}
           </div>
         </div>
-        {uploadedFiles.length > 0 && (
-          <Button variant="outline" onClick={clearAllFiles}>
-            Clear All
-          </Button>
-        )}
       </div>
 
       {/* Show auth message if not logged in */}
       {!user && (
         <Alert>
           <AlertDescription>
-            Please sign in to upload files. You need to be authenticated to use the upload feature.
+            Please sign in to upload and manage files. You need to be authenticated to use this feature.
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Category Selection */}
-      <UploadCategorySelector
-        selectedCategory={selectedCategory}
-        onCategorySelect={handleCategorySelect}
-      />
-
-      {/* Upload Area */}
+      {/* Tabs for Upload and My Files */}
       {user && (
-        <FileUploadArea
-          selectedCategory={selectedCategory}
-          onFilesSelect={handleFilesSelect}
-          isUploading={isUploading}
-        />
-      )}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsTrigger value="upload" className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Upload Files
+            </TabsTrigger>
+            <TabsTrigger value="files" className="flex items-center gap-2">
+              <FolderOpen className="h-4 w-4" />
+              My Files ({userFiles.length})
+            </TabsTrigger>
+          </TabsList>
 
-      {/* Uploaded Files List */}
-      {uploadedFiles.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Uploaded Files ({uploadedFiles.length})</CardTitle>
-            <CardDescription>
-              Track the status of your uploaded files
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {uploadedFiles.map((uploadedFile, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-4 p-4 border rounded-lg"
-                >
-                  {/* File Icon */}
-                  <div className="flex-shrink-0">
-                    <FileText className="h-8 w-8 text-red-500" />
+          {/* Upload Tab */}
+          <TabsContent value="upload" className="space-y-6 mt-6">
+            {/* Category Selection */}
+            <UploadCategorySelector
+              selectedCategory={selectedCategory}
+              onCategorySelect={handleCategorySelect}
+            />
+
+            {/* Upload Area */}
+            <FileUploadArea
+              selectedCategory={selectedCategory}
+              onFilesSelect={handleFilesSelect}
+              isUploading={isUploading}
+            />
+
+            {/* Current Upload Progress */}
+            {uploadedFiles.length > 0 && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>Upload Progress ({uploadedFiles.length})</CardTitle>
+                    <CardDescription>
+                      Track the status of your current uploads
+                    </CardDescription>
                   </div>
+                  <Button variant="outline" size="sm" onClick={clearAllFiles}>
+                    Clear All
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {uploadedFiles.map((uploadedFile, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-4 p-4 border rounded-lg"
+                      >
+                        <div className="flex-shrink-0">
+                          <FileText className="h-8 w-8 text-red-500" />
+                        </div>
 
-                  {/* File Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium truncate">
-                          {uploadedFile.file.name}
-                        </p>
-                        {getCategoryBadge(uploadedFile.category)}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium truncate">
+                                {uploadedFile.file.name}
+                              </p>
+                              {getCategoryBadge(uploadedFile.category)}
+                            </div>
+                            <Badge
+                              variant={
+                                uploadedFile.status === "success"
+                                  ? "default"
+                                  : uploadedFile.status === "error"
+                                    ? "destructive"
+                                    : "secondary"
+                              }
+                            >
+                              {uploadedFile.status === "success" && (
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                              )}
+                              {uploadedFile.status === "error" && (
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                              )}
+                              {uploadedFile.status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {formatFileSize(uploadedFile.file.size)}
+                          </p>
+
+                          {uploadedFile.status === "uploading" && (
+                            <Progress
+                              value={uploadedFile.progress}
+                              className="mt-2"
+                            />
+                          )}
+
+                          {uploadedFile.status === "error" &&
+                            uploadedFile.errorMessage && (
+                              <Alert variant="destructive" className="mt-2">
+                                <AlertDescription className="text-xs">
+                                  {uploadedFile.errorMessage}
+                                </AlertDescription>
+                              </Alert>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {uploadedFile.status === "error" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleRetryUpload(index)}
+                              disabled={!user}
+                            >
+                              Retry
+                            </Button>
+                          )}
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => removeFile(index)}
+                            disabled={uploadedFile.status === "uploading"}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <Badge
-                        variant={
-                          uploadedFile.status === "success"
-                            ? "default"
-                            : uploadedFile.status === "error"
-                              ? "destructive"
-                              : "secondary"
-                        }
-                      >
-                        {uploadedFile.status === "success" && (
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                        )}
-                        {uploadedFile.status === "error" && (
-                          <AlertCircle className="h-3 w-3 mr-1" />
-                        )}
-                        {uploadedFile.status}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {formatFileSize(uploadedFile.file.size)}
-                    </p>
-
-                    {/* Progress Bar */}
-                    {uploadedFile.status === "uploading" && (
-                      <Progress
-                        value={uploadedFile.progress}
-                        className="mt-2"
-                      />
-                    )}
-
-                    {/* Error Message */}
-                    {uploadedFile.status === "error" &&
-                      uploadedFile.errorMessage && (
-                        <Alert variant="destructive" className="mt-2">
-                          <AlertDescription className="text-xs">
-                            {uploadedFile.errorMessage}
-                          </AlertDescription>
-                        </Alert>
-                      )}
+                    ))}
                   </div>
+                </CardContent>
+              </Card>
+            )}
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    {uploadedFile.status === "error" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleRetryUpload(index)}
-                        disabled={!user}
-                      >
-                        Retry
-                      </Button>
-                    )}
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => removeFile(index)}
-                      disabled={uploadedFile.status === "uploading"}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            {/* Summary Stats */}
+            {uploadedFiles.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardDescription>Total Files</CardDescription>
+                    <CardTitle className="text-3xl">{uploadedFiles.length}</CardTitle>
+                  </CardHeader>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardDescription>Contact Enrichment</CardDescription>
+                    <CardTitle className="text-3xl text-blue-600">
+                      {uploadedFiles.filter(f => f.category === 'contact_enrichment_pdf').length}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardDescription>Rules</CardDescription>
+                    <CardTitle className="text-3xl text-green-600">
+                      {uploadedFiles.filter(f => f.category === 'rules_upload_pdf').length}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardDescription>Failed</CardDescription>
+                    <CardTitle className="text-3xl text-red-600">
+                      {uploadedFiles.filter(f => f.status === "error").length}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+              </div>
+            )}
+          </TabsContent>
 
-      {/* Summary Stats */}
-      {uploadedFiles.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>Total Files</CardDescription>
-              <CardTitle className="text-3xl">{uploadedFiles.length}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>Contact Enrichment</CardDescription>
-              <CardTitle className="text-3xl text-blue-600">
-                {uploadedFiles.filter(f => f.category === 'contact_enrichment_pdf').length}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>Rules</CardDescription>
-              <CardTitle className="text-3xl text-green-600">
-                {uploadedFiles.filter(f => f.category === 'rules_upload_pdf').length}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>Failed</CardDescription>
-              <CardTitle className="text-3xl text-red-600">
-                {uploadedFiles.filter(f => f.status === "error").length}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        </div>
+          {/* My Files Tab */}
+          <TabsContent value="files" className="mt-6">
+            <UserFilesList
+              files={userFiles}
+              isLoading={isLoadingFiles}
+              onRefresh={fetchFiles}
+              onDelete={deleteUserFile}
+            />
+
+            {/* Files Summary Stats */}
+            {userFiles.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardDescription>Total Files</CardDescription>
+                    <CardTitle className="text-3xl">{userFiles.length}</CardTitle>
+                  </CardHeader>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardDescription>Contact Enrichment</CardDescription>
+                    <CardTitle className="text-3xl text-blue-600">
+                      {userFiles.filter(f => f.category === 'contact_enrichment_pdf').length}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardDescription>Rules</CardDescription>
+                    <CardTitle className="text-3xl text-green-600">
+                      {userFiles.filter(f => f.category === 'rules_upload_pdf').length}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardDescription>Completed</CardDescription>
+                    <CardTitle className="text-3xl text-emerald-600">
+                      {userFiles.filter(f => f.upload_status === 'completed').length}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   );

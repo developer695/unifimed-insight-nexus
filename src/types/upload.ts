@@ -1,5 +1,5 @@
 export type UploadCategory = 'contact_enrichment_pdf' | 'rules_upload_pdf';
-export type UploadStatus = 'pending' | 'uploading' | 'success' | 'error';
+export type UploadStatus = 'pending' | 'uploading' | 'success' | 'error' | 'completed';
 
 export interface UploadedFile {
     file: File;
@@ -30,3 +30,20 @@ export interface SaveFileRequest {
     cloudinary_public_id: string;
     file_size: number;
 }
+
+
+export interface FileRecord {
+    id: string;
+    user_id: string;
+    category: UploadCategory;
+    original_filename: string;
+    stored_filename: string;
+    cloudinary_url: string;
+    cloudinary_public_id: string;
+    file_size: number;
+    mime_type: string;
+    upload_status: UploadStatus;
+    created_at: string;
+    updated_at: string;
+}
+

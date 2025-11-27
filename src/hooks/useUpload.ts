@@ -39,8 +39,6 @@ export function useUpload() {
                 return updated;
             });
 
-            console.log('📝 [useUpload] Step 1: Getting signed URL...');
-
             // Step 1: Get signed URL
             const signedUrlResponse = await generateSignedUrl(
                 file.name,
@@ -54,7 +52,6 @@ export function useUpload() {
                 throw new Error(signedUrlResponse.message);
             }
 
-            console.log('✅ [useUpload] Signed URL received successfully');
 
             setUploadedFiles(prev => {
                 const updated = [...prev];
@@ -62,12 +59,10 @@ export function useUpload() {
                 return updated;
             });
 
-            console.log('📝 [useUpload] Step 2: Uploading to Cloudinary...');
 
             // Step 2: Upload to Cloudinary
             const cloudinaryResult = await uploadToCloudinary(file, signedUrlResponse.data);
 
-            console.log('✅ [useUpload] Cloudinary upload successful');
 
             setUploadedFiles(prev => {
                 const updated = [...prev];
@@ -75,7 +70,6 @@ export function useUpload() {
                 return updated;
             });
 
-            console.log('📝 [useUpload] Step 3: Saving file record to database...');
 
             // Step 3: Save to database
             const saveFileResponse = await saveFileRecord({
@@ -92,7 +86,6 @@ export function useUpload() {
                 throw new Error(saveFileResponse.message);
             }
 
-            console.log('✅ [useUpload] File record saved to database');
 
             setUploadedFiles(prev => {
                 const updated = [...prev];
@@ -100,14 +93,11 @@ export function useUpload() {
                 return updated;
             });
 
-            console.log('📝 [useUpload] Step 4: Sending to n8n webhook...');
 
             // Step 4: Send to n8n webhook
             const webhookUrl = category === 'rules_upload_pdf'
                 ? import.meta.env.VITE_N8N_RULES_WEBHOOK_URL
                 : import.meta.env.VITE_N8N_CONTACT_UPLOAD_WEBHOOK_URL;
-
-            console.log('🔄 [useUpload] Using webhook URL:', webhookUrl);
 
             await sendToN8nWebhook(webhookUrl, {
                 fileUrl: cloudinaryResult.secure_url,
@@ -121,8 +111,6 @@ export function useUpload() {
                 uploadedAt: new Date().toISOString(),
             });
 
-            console.log('✅ [useUpload] n8n webhook sent successfully');
-
             // Success
             setUploadedFiles(prev => {
                 const updated = [...prev];
@@ -132,8 +120,6 @@ export function useUpload() {
                 updated[fileIndex].fileId = saveFileResponse.data.id;
                 return updated;
             });
-
-            console.log('🎉 [useUpload] Upload process completed successfully');
 
             toast({
                 title: 'Upload successful',
