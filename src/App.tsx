@@ -53,7 +53,7 @@ const App = () => (
               <Route path="seo-keywords" element={<SEOKeywords />} />
               <Route path="content" element={<ContentEngine />} />
               <Route path="ad-campaigns" element={<AdCampaigns />} />
-              <Route path="upload" element={<UploadPage />} />
+              <Route path="contact-intelligence/upload" element={<UploadPage />} />
               <Route path="keyword-upload" element={<KeywordUpload />} />
               <Route path="settings" element={<Settings />} />
               <Route path="analytics" element={<Analytics />} />

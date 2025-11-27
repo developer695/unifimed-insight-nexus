@@ -1,8 +1,11 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DollarSign, MousePointerClick, TrendingUp, Target, Download } from "lucide-react";
+import { DollarSign, MousePointerClick, TrendingUp, Target, Download, RefreshCw } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -15,6 +18,12 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { supabase } from "@/lib/supabase";
+import { AdStatus, AdVariation } from "@/types/ads";
+import { AdApprovalTab } from "@/components/dashboard/adsPageComp/AdApprovalTab";
+import { useAuth } from "@/contexts/AuthContext";
+import { AdDetailsModal } from "@/components/dashboard/adsPageComp/AdDetailsModal";
+
 
 const performanceTrendData = [
   { date: "Jan 1", spend: 2100, conversions: 34, roas: 3.2 },
@@ -37,7 +46,116 @@ const googleCampaignsData = [
   { name: "Medical Device Security - Search", spend: 3500, impressions: 98000, ctr: 4.5, conversions: 57, cpa: 61.40 },
 ];
 
+async function getAdVariations(): Promise<AdVariation[]> {
+  const { data, error } = await supabase
+    .from('ad_variations')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
 export default function AdCampaigns() {
+  const [ads, setAds] = useState<AdVariation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [selectedAd, setSelectedAd] = useState<AdVariation | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const { user, loading: authLoading } = useAuth();
+
+  const fetchAds = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('ad_variations')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAds(data || []);
+    } catch (error) {
+      console.error('Error fetching ads:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAds();
+  }, []);
+
+  const handleStatusChange = async (id: string, status: AdStatus, adminName: string) => {
+    try {
+      setUpdatingId(id);
+
+      const updateData: Partial<AdVariation> = {
+        status,
+        approved_by: status !== 'pending' ? adminName : null,
+        approved_at: status !== 'pending' ? new Date().toISOString() : null
+      };
+
+      // Update in Supabase
+      const { error } = await supabase
+        .from('ad_variations')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Update local state immediately
+      setAds(prev => prev.map(ad =>
+        ad.id === id
+          ? { ...ad, ...updateData }
+          : ad
+      ));
+
+    } catch (error) {
+      console.error('Error updating ad status:', error);
+      alert('Failed to update ad status. Please try again.');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleViewDetails = (ad: AdVariation) => {
+    setSelectedAd(ad);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedAd(null);
+  };
+
+  // Show loading state while checking authentication
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto" />
+          <p className="mt-2 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login prompt if not authenticated
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
+          <p className="text-muted-foreground mb-4">Please log in to access the ad approval dashboard.</p>
+          <Button onClick={() => supabase.auth.signInWithOAuth({ provider: 'google' })}>
+            Sign In
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -139,19 +257,32 @@ export default function AdCampaigns() {
         </Card>
       </div>
 
-      {/* Campaigns Detail */}
+      {/* Campaigns Detail with Ad Approval Tab */}
       <Card>
         <CardHeader>
-          <CardTitle>Campaign Performance Detail</CardTitle>
+          <CardTitle>Campaign Management</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="google" className="w-full">
-            <TabsList className="mb-4">
+          <Tabs defaultValue="approval" className="w-full ">
+            <TabsList className="mb-4 flex flex-wrap">
+              <TabsTrigger value="approval">Ad Approval</TabsTrigger>
               <TabsTrigger value="google">Google Ads</TabsTrigger>
               <TabsTrigger value="linkedin">LinkedIn Ads</TabsTrigger>
               <TabsTrigger value="optimization">AI Optimization</TabsTrigger>
             </TabsList>
-            
+
+            <TabsContent value="approval">
+              <AdApprovalTab
+                ads={ads}
+                loading={loading}
+                updatingId={updatingId}
+                onViewDetails={handleViewDetails}
+
+                onStatusChange={handleStatusChange}
+                onRefresh={fetchAds}
+              />
+            </TabsContent>
+
             <TabsContent value="google">
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -180,13 +311,13 @@ export default function AdCampaigns() {
                 </table>
               </div>
             </TabsContent>
-            
+
             <TabsContent value="linkedin">
               <div className="text-center py-8 text-muted-foreground">
                 LinkedIn campaign details coming soon
               </div>
             </TabsContent>
-            
+
             <TabsContent value="optimization">
               <div className="space-y-4">
                 <div className="p-4 bg-success/10 border border-success/20 rounded-lg">
@@ -216,6 +347,12 @@ export default function AdCampaigns() {
           </Tabs>
         </CardContent>
       </Card>
+
+      <AdDetailsModal
+        ad={selectedAd}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 }

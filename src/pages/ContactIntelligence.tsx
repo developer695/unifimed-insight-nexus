@@ -98,7 +98,7 @@ export default function ContactIntelligence() {
           </p>
         </div>
         <div className="flex flex-row gap-4">
-          <Button onClick={() => navigate('/upload')}>
+          <Button onClick={() => navigate('/contact-intelligence/upload')}>
             <Upload className="h-4 w-4 mr-2" />
             Upload PDF
           </Button>

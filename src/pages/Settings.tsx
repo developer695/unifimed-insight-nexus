@@ -380,6 +380,7 @@ export default function Settings() {
         .select("platform_id")
         .eq("user_id", user.id);
 
+
       if (error) throw error;
 
       // Update status for platforms that have credentials
@@ -473,9 +474,8 @@ export default function Settings() {
 
       toast({
         title: "Connection Successful",
-        description: `${
-          platforms.find((p) => p.id === platformId)?.name
-        } has been connected successfully.`,
+        description: `${platforms.find((p) => p.id === platformId)?.name
+          } has been connected successfully.`,
       });
     } catch (error) {
       // Update status to error
@@ -483,9 +483,8 @@ export default function Settings() {
 
       toast({
         title: "Connection Failed",
-        description: `Failed to save credentials for ${
-          platforms.find((p) => p.id === platformId)?.name
-        }. Please try again.`,
+        description: `Failed to save credentials for ${platforms.find((p) => p.id === platformId)?.name
+          }. Please try again.`,
         variant: "destructive",
       });
 
@@ -534,16 +533,14 @@ export default function Settings() {
 
       toast({
         title: "Disconnected",
-        description: `${
-          platforms.find((p) => p.id === platformId)?.name
-        } has been disconnected.`,
+        description: `${platforms.find((p) => p.id === platformId)?.name
+          } has been disconnected.`,
       });
     } catch (error) {
       toast({
         title: "Disconnection Failed",
-        description: `Failed to disconnect from ${
-          platforms.find((p) => p.id === platformId)?.name
-        }.`,
+        description: `Failed to disconnect from ${platforms.find((p) => p.id === platformId)?.name
+          }.`,
         variant: "destructive",
       });
 

@@ -12,12 +12,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AuthError } from "@supabase/supabase-js";
+import { Eye, EyeOff } from "lucide-react"; // import icons
 
 export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // state for toggle
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
@@ -29,8 +32,9 @@ export function Login() {
     try {
       await signIn(email, password);
       navigate("/");
-    } catch (err: any) {
-      setError(err.message || "Failed to sign in");
+    } catch (err: unknown) {
+      const error = err as AuthError;
+      setError(error?.message ?? "Failed to sign in");
     } finally {
       setLoading(false);
     }
@@ -69,17 +73,25 @@ export function Login() {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"} // toggle type
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
+                className="pr-10" // add padding for the icon
               />
+              <button
+                type="button"
+                className="absolute right-3 top-9 text-gray-400 hover:text-gray-600"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>

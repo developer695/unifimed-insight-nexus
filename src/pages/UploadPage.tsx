@@ -1,195 +1,90 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import {
-  Upload,
-  File,
-  X,
-  CheckCircle,
-  AlertCircle,
-  ArrowLeft,
-  FileText,
-} from "lucide-react";
+import { ArrowLeft, FileText, CheckCircle, AlertCircle, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface UploadedFile {
-  file: File;
-  progress: number;
-  status: "pending" | "uploading" | "success" | "error";
-  errorMessage?: string;
-}
+import { useUpload } from "@/hooks/useUpload";
+import { UploadCategory } from "@/types/upload";
+import { UploadCategorySelector } from "@/uploads/UploadCategorySelector";
+import { FileUploadArea } from "@/uploads/FileUploadArea";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function UploadPage() {
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedCategory, setSelectedCategory] = useState<UploadCategory | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { uploadedFiles, uploadFile, removeFile, retryUpload, clearAllFiles } = useUpload();
 
-  const handleFileSelect = (files: FileList | null) => {
-    if (!files) return;
-
-    const newFiles: UploadedFile[] = Array.from(files).map((file) => ({
-      file,
-      progress: 0,
-      status: "pending",
-    }));
-
-    const currentLength = uploadedFiles.length;
-    setUploadedFiles((prev) => [...prev, ...newFiles]);
-
-    // Upload each file immediately with the file object
-    newFiles.forEach((uploadedFile, index) => {
-      setTimeout(() => {
-        uploadFileWithProgress(currentLength + index, uploadedFile.file);
-      }, 0);
-    });
-  };
-
-  const uploadFileWithProgress = async (index: number, file: File) => {
-    setUploadedFiles((prev) => {
-      const updated = [...prev];
-      if (updated[index]) {
-        updated[index].status = "uploading";
-      }
-      return updated;
-    });
-
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("fileName", file.name);
-      formData.append("fileSize", file.size.toString());
-      formData.append("fileType", file.type);
-
-      // Create XMLHttpRequest to track upload progress
-      const xhr = new XMLHttpRequest();
-
-      // Track upload progress
-      xhr.upload.addEventListener("progress", (e) => {
-        if (e.lengthComputable) {
-          const progress = Math.round((e.loaded / e.total) * 100);
-          setUploadedFiles((prev) => {
-            const updated = [...prev];
-            if (updated[index]) {
-              updated[index].progress = progress;
-            }
-            return updated;
-          });
-        }
-      });
-
-      // Handle completion
-      const uploadPromise = new Promise<void>((resolve, reject) => {
-        xhr.addEventListener("load", () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve();
-          } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
-          }
-        });
-
-        xhr.addEventListener("error", () => {
-          reject(new Error("Network error occurred"));
-        });
-
-        xhr.addEventListener("abort", () => {
-          reject(new Error("Upload aborted"));
-        });
-      });
-
-      // Send request
-      xhr.open("POST", import.meta.env.VITE_N8N_RULES_WEBHOOK_URL || "");
-      xhr.send(formData);
-
-      await uploadPromise;
-
-      // Success
-      setUploadedFiles((prev) => {
-        const updated = [...prev];
-        if (updated[index]) {
-          updated[index].status = "success";
-          updated[index].progress = 100;
-        }
-        return updated;
-      });
-
-      toast({
-        title: "Upload successful",
-        description: `${file.name} has been uploaded successfully.`,
-      });
-    } catch (error: any) {
-      // Error handling
-      setUploadedFiles((prev) => {
-        const updated = [...prev];
-        if (updated[index]) {
-          updated[index].status = "error";
-          updated[index].errorMessage =
-            error.message || "Upload failed. Please try again.";
-        }
-        return updated;
-      });
-
-      toast({
-        title: "Upload failed",
-        description: error.message || "An error occurred during upload.",
-        variant: "destructive",
-      });
+  // Get user data from auth context
+  const getUserData = () => {
+    if (!user) {
+      throw new Error("User not authenticated");
     }
+
+    // Extract username from email (everything before @)
+    const userName = user.email?.split('@')[0] || 'user';
+
+    return {
+      userId: user.id,
+      userEmail: user.email || '',
+      userName: userName
+    };
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    handleFileSelect(e.dataTransfer.files);
-  };
-
-  const removeFile = (index: number) => {
-    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const retryUpload = (index: number) => {
-    const file = uploadedFiles[index]?.file;
-    if (!file) {
+  const handleFilesSelect = async (files: File[], category: UploadCategory) => {
+    if (!user) {
       toast({
-        title: "Retry failed",
-        description: "File no longer available",
+        title: "Authentication required",
+        description: "Please sign in to upload files.",
         variant: "destructive",
       });
       return;
     }
 
-    setUploadedFiles((prev) => {
-      const updated = [...prev];
-      updated[index].progress = 0;
-      updated[index].status = "pending";
-      updated[index].errorMessage = undefined;
-      return updated;
-    });
+    try {
+      const userData = getUserData();
 
-    setTimeout(() => {
-      uploadFileWithProgress(index, file);
-    }, 0);
+      for (const file of files) {
+        await uploadFile(file, category, userData);
+      }
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCategorySelect = (category: UploadCategory) => {
+    setSelectedCategory(category);
+  };
+
+  const handleRetryUpload = async (index: number) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to retry upload.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const userData = getUserData();
+      await retryUpload(index, userData);
+    } catch (error) {
+      toast({
+        title: "Retry failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -200,13 +95,18 @@ export default function UploadPage() {
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
   };
 
-  const getFileIcon = (fileName: string) => {
-    const extension = fileName.split(".").pop()?.toLowerCase();
-    if (extension === "pdf") {
-      return <FileText className="h-8 w-8 text-red-500" />;
+  const getCategoryBadge = (category: UploadCategory) => {
+    switch (category) {
+      case 'contact_enrichment_pdf':
+        return <Badge variant="secondary">Contact Enrichment</Badge>;
+      case 'rules_upload_pdf':
+        return <Badge variant="outline">Rules</Badge>;
+      default:
+        return null;
     }
-    return <File className="h-8 w-8 text-muted-foreground" />;
   };
+
+  const isUploading = uploadedFiles.some(file => file.status === 'uploading');
 
   return (
     <div className="space-y-6">
@@ -219,61 +119,45 @@ export default function UploadPage() {
           <div>
             <h1 className="text-3xl font-bold">Upload Files</h1>
             <p className="text-muted-foreground mt-1">
-              Upload PDF files for contact intelligence processing
+              Upload PDF files for contact intelligence or rules processing
             </p>
+            {user && (
+              <p className="text-sm text-muted-foreground">
+                Uploading as: {user.email}
+              </p>
+            )}
           </div>
         </div>
+        {uploadedFiles.length > 0 && (
+          <Button variant="outline" onClick={clearAllFiles}>
+            Clear All
+          </Button>
+        )}
       </div>
 
+      {/* Show auth message if not logged in */}
+      {!user && (
+        <Alert>
+          <AlertDescription>
+            Please sign in to upload files. You need to be authenticated to use the upload feature.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Category Selection */}
+      <UploadCategorySelector
+        selectedCategory={selectedCategory}
+        onCategorySelect={handleCategorySelect}
+      />
+
       {/* Upload Area */}
-      <Card>
-        <CardHeader>
-          <CardTitle>File Upload</CardTitle>
-          <CardDescription>
-            Drag and drop files here or click to browse. Supported formats: PDF
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div
-            className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
-              isDragging
-                ? "border-primary bg-primary/5"
-                : "border-muted-foreground/25 hover:border-muted-foreground/50"
-            }`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            <div className="flex flex-col items-center gap-4">
-              <div className="p-4 rounded-full bg-muted">
-                <Upload className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-lg font-medium">
-                  Drop files here or click to upload
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  PDF files up to 10MB
-                </p>
-              </div>
-              <Button
-                onClick={() => fileInputRef.current?.click()}
-                variant="outline"
-              >
-                Browse Files
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept=".pdf"
-                className="hidden"
-                onChange={(e) => handleFileSelect(e.target.files)}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {user && (
+        <FileUploadArea
+          selectedCategory={selectedCategory}
+          onFilesSelect={handleFilesSelect}
+          isUploading={isUploading}
+        />
+      )}
 
       {/* Uploaded Files List */}
       {uploadedFiles.length > 0 && (
@@ -293,22 +177,25 @@ export default function UploadPage() {
                 >
                   {/* File Icon */}
                   <div className="flex-shrink-0">
-                    {getFileIcon(uploadedFile.file.name)}
+                    <FileText className="h-8 w-8 text-red-500" />
                   </div>
 
                   {/* File Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <p className="font-medium truncate">
-                        {uploadedFile.file.name}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium truncate">
+                          {uploadedFile.file.name}
+                        </p>
+                        {getCategoryBadge(uploadedFile.category)}
+                      </div>
                       <Badge
                         variant={
                           uploadedFile.status === "success"
                             ? "default"
                             : uploadedFile.status === "error"
-                            ? "destructive"
-                            : "secondary"
+                              ? "destructive"
+                              : "secondary"
                         }
                       >
                         {uploadedFile.status === "success" && (
@@ -349,7 +236,8 @@ export default function UploadPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => retryUpload(index)}
+                        onClick={() => handleRetryUpload(index)}
+                        disabled={!user}
                       >
                         Retry
                       </Button>
@@ -372,7 +260,7 @@ export default function UploadPage() {
 
       {/* Summary Stats */}
       {uploadedFiles.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-3">
               <CardDescription>Total Files</CardDescription>
@@ -381,9 +269,17 @@ export default function UploadPage() {
           </Card>
           <Card>
             <CardHeader className="pb-3">
-              <CardDescription>Successful</CardDescription>
+              <CardDescription>Contact Enrichment</CardDescription>
+              <CardTitle className="text-3xl text-blue-600">
+                {uploadedFiles.filter(f => f.category === 'contact_enrichment_pdf').length}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardDescription>Rules</CardDescription>
               <CardTitle className="text-3xl text-green-600">
-                {uploadedFiles.filter((f) => f.status === "success").length}
+                {uploadedFiles.filter(f => f.category === 'rules_upload_pdf').length}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -391,7 +287,7 @@ export default function UploadPage() {
             <CardHeader className="pb-3">
               <CardDescription>Failed</CardDescription>
               <CardTitle className="text-3xl text-red-600">
-                {uploadedFiles.filter((f) => f.status === "error").length}
+                {uploadedFiles.filter(f => f.status === "error").length}
               </CardTitle>
             </CardHeader>
           </Card>
