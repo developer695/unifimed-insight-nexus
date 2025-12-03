@@ -31,27 +31,107 @@ const outcomesData = [
   { outcome: "No Next Step", count: 42 },
 ];
 
-const insightsData = [
+// Meeting data based on schema
+const meetingsData = [
   {
-    date: "2024-02-05",
-    prospect: "Sarah Johnson - HealthSys",
-    trigger: "Budget approved for Q2",
-    sentiment: "positive",
-    nextAction: "Send proposal by Feb 10",
+    meeting_date: "2024-02-05T10:00:00",
+    prospect_name: "Sarah Johnson",
+    prospect_company: "HealthSys",
+    industry: "Healthcare",
+    duration_minutes: 45,
+    status: "completed",
+    has_transcript: true,
+    summary: {
+      summary_text: "Discussed Q2 budget allocation and implementation timeline",
+      overall_sentiment: "positive",
+      engagement_level: "high",
+      budget_qualified: true,
+      timeline_defined: true,
+      decision_maker: true,
+    },
+    buying_triggers: [
+      { trigger_text: "Budget approved for Q2", category: "Budget", priority: "high" },
+    ],
+    objections: [],
+    next_steps: [
+      { step_description: "Send proposal", due_date: "2024-02-10", assigned_to: "Sales Rep", status: "pending", priority: "high" },
+    ],
   },
   {
-    date: "2024-02-04",
-    prospect: "Michael Chen - MediCorp",
-    trigger: "Current vendor contract ends in 60 days",
-    sentiment: "neutral",
-    nextAction: "Schedule technical demo",
+    meeting_date: "2024-02-04T14:30:00",
+    prospect_name: "Michael Chen",
+    prospect_company: "MediCorp",
+    industry: "Medical Devices",
+    duration_minutes: 38,
+    status: "completed",
+    has_transcript: true,
+    summary: {
+      summary_text: "Reviewed current vendor pain points and transition timeline",
+      overall_sentiment: "neutral",
+      engagement_level: "medium",
+      budget_qualified: false,
+      timeline_defined: true,
+      decision_maker: false,
+    },
+    buying_triggers: [
+      { trigger_text: "Current vendor contract ends in 60 days", category: "Timeline", priority: "medium" },
+    ],
+    objections: [
+      { objection_text: "Need to involve IT team", objection_type: "Process", is_resolved: false },
+    ],
+    next_steps: [
+      { step_description: "Schedule technical demo", due_date: "2024-02-12", assigned_to: "SE Team", status: "pending", priority: "medium" },
+    ],
   },
   {
-    date: "2024-02-04",
-    prospect: "Emily Rodriguez - CareCtr",
-    trigger: "Pricing concerns raised",
-    sentiment: "negative",
-    nextAction: "Prepare ROI analysis",
+    meeting_date: "2024-02-04T09:00:00",
+    prospect_name: "Emily Rodriguez",
+    prospect_company: "CareCtr",
+    industry: "Healthcare",
+    duration_minutes: 32,
+    status: "completed",
+    has_transcript: true,
+    summary: {
+      summary_text: "Initial discovery call, pricing concerns raised early",
+      overall_sentiment: "negative",
+      engagement_level: "low",
+      budget_qualified: false,
+      timeline_defined: false,
+      decision_maker: true,
+    },
+    buying_triggers: [],
+    objections: [
+      { objection_text: "Pricing concerns raised", objection_type: "Budget", is_resolved: false },
+    ],
+    next_steps: [
+      { step_description: "Prepare ROI analysis", due_date: "2024-02-08", assigned_to: "Sales Rep", status: "pending", priority: "high" },
+    ],
+  },
+  {
+    meeting_date: "2024-02-03T11:00:00",
+    prospect_name: "David Park",
+    prospect_company: "TechMed Solutions",
+    industry: "Health Tech",
+    duration_minutes: 52,
+    status: "completed",
+    has_transcript: true,
+    summary: {
+      summary_text: "Deep dive into technical requirements and integration needs",
+      overall_sentiment: "positive",
+      engagement_level: "high",
+      budget_qualified: true,
+      timeline_defined: true,
+      decision_maker: true,
+    },
+    buying_triggers: [
+      { trigger_text: "Board approved digital transformation initiative", category: "Strategic", priority: "high" },
+      { trigger_text: "Q1 implementation deadline", category: "Timeline", priority: "high" },
+    ],
+    objections: [],
+    next_steps: [
+      { step_description: "Send technical documentation", due_date: "2024-02-06", assigned_to: "SE Team", status: "completed", priority: "high" },
+      { step_description: "Schedule executive briefing", due_date: "2024-02-15", assigned_to: "Sales Rep", status: "pending", priority: "medium" },
+    ],
   },
 ];
 
@@ -166,31 +246,94 @@ export default function SchedulingMeetings() {
                 <tr className="border-b border-border">
                   <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Date</th>
                   <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Prospect</th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Key Trigger</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Industry</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Duration</th>
                   <th className="text-center py-3 px-4 font-medium text-sm text-muted-foreground">Sentiment</th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Next Action</th>
+                  <th className="text-center py-3 px-4 font-medium text-sm text-muted-foreground">Engagement</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Key Triggers</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Next Steps</th>
+                  <th className="text-center py-3 px-4 font-medium text-sm text-muted-foreground">Transcript</th>
                 </tr>
               </thead>
               <tbody>
-                {insightsData.map((insight, index) => (
+                {meetingsData.map((meeting, index) => (
                   <tr key={index} className="border-b border-border hover:bg-muted/50 transition-colors">
-                    <td className="py-3 px-4 text-sm text-muted-foreground">{insight.date}</td>
-                    <td className="py-3 px-4 font-medium">{insight.prospect}</td>
-                    <td className="py-3 px-4 text-sm">{insight.trigger}</td>
+                    <td className="py-3 px-4 text-sm text-muted-foreground">
+                      {new Date(meeting.meeting_date).toLocaleDateString()}
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="font-medium">{meeting.prospect_name}</div>
+                      <div className="text-xs text-muted-foreground">{meeting.prospect_company}</div>
+                    </td>
+                    <td className="py-3 px-4 text-sm">{meeting.industry}</td>
+                    <td className="py-3 px-4 text-sm">{meeting.duration_minutes} min</td>
                     <td className="py-3 px-4 text-center">
                       <span
                         className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                          insight.sentiment === "positive"
+                          meeting.summary.overall_sentiment === "positive"
                             ? "bg-success/10 text-success"
-                            : insight.sentiment === "neutral"
+                            : meeting.summary.overall_sentiment === "neutral"
                             ? "bg-primary/10 text-primary"
-                            : "bg-warning/10 text-warning"
+                            : "bg-destructive/10 text-destructive"
                         }`}
                       >
-                        {insight.sentiment}
+                        {meeting.summary.overall_sentiment}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-sm">{insight.nextAction}</td>
+                    <td className="py-3 px-4 text-center">
+                      <span
+                        className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                          meeting.summary.engagement_level === "high"
+                            ? "bg-success/10 text-success"
+                            : meeting.summary.engagement_level === "medium"
+                            ? "bg-warning/10 text-warning"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {meeting.summary.engagement_level}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-sm">
+                      {meeting.buying_triggers.length > 0 ? (
+                        <div className="space-y-1">
+                          {meeting.buying_triggers.map((trigger, i) => (
+                            <div key={i} className="flex items-center gap-1">
+                              <span className={`w-2 h-2 rounded-full ${
+                                trigger.priority === "high" ? "bg-destructive" : "bg-warning"
+                              }`} />
+                              <span className="text-xs">{trigger.trigger_text}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">None identified</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-sm">
+                      {meeting.next_steps.length > 0 ? (
+                        <div className="space-y-1">
+                          {meeting.next_steps.slice(0, 2).map((step, i) => (
+                            <div key={i} className="flex items-center gap-1">
+                              <span className={`w-2 h-2 rounded-full ${
+                                step.status === "completed" ? "bg-success" : "bg-primary"
+                              }`} />
+                              <span className="text-xs">{step.step_description}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">No next steps</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      {meeting.has_transcript ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-success/10 text-success">
+                          ✓
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
