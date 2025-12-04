@@ -22,7 +22,6 @@ import NotFound from "./pages/NotFound";
 import Analytics from "./pages/Analytics";
 import CostROI from "./pages/CostROI";
 import SystemHealth from "./pages/SystemHealth";
-
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -37,9 +36,9 @@ const App = () => (
             <Route
               path="/"
               element={
-                <ProtectedRoute>
+                // <ProtectedRoute>
                   <DashboardLayout />
-                </ProtectedRoute>
+                // </ProtectedRoute>
               }
             >
               <Route index element={<ExecutiveOverview />} />
