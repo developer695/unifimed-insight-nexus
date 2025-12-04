@@ -191,7 +191,13 @@ console.log("meetingsData",meetingsData);
                   <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Prospect</th>
                   <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Industry</th>
                   <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Duration</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Industry</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Duration</th>
                   <th className="text-center py-3 px-4 font-medium text-sm text-muted-foreground">Sentiment</th>
+                  <th className="text-center py-3 px-4 font-medium text-sm text-muted-foreground">Engagement</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Key Triggers</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Next Steps</th>
+                  <th className="text-center py-3 px-4 font-medium text-sm text-muted-foreground">Transcript</th>
                   <th className="text-center py-3 px-4 font-medium text-sm text-muted-foreground">Engagement</th>
                   <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Key Triggers</th>
                   <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Next Steps</th>
