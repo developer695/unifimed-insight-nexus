@@ -22,6 +22,9 @@ import NotFound from "./pages/NotFound";
 import Analytics from "./pages/Analytics";
 import CostROI from "./pages/CostROI";
 import SystemHealth from "./pages/SystemHealth";
+import Assessment from "./pages/assessment";
+import Audit from "./pages/audit";
+import Consultation from "./pages/consultation";
 
 const queryClient = new QueryClient();
 
@@ -53,7 +56,10 @@ const App = () => (
               <Route path="seo-keywords" element={<SEOKeywords />} />
               <Route path="content" element={<ContentEngine />} />
               <Route path="ad-campaigns" element={<AdCampaigns />} />
-              <Route path="contact-intelligence/upload" element={<UploadPage />} />
+              <Route
+                path="contact-intelligence/upload"
+                element={<UploadPage />}
+              />
               <Route path="keyword-upload" element={<KeywordUpload />} />
               <Route path="settings" element={<Settings />} />
               <Route path="analytics" element={<Analytics />} />
@@ -62,6 +68,9 @@ const App = () => (
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
+            <Route path="assessment" element={<Assessment />} />
+            <Route path="audit" element={<Audit />} />
+            <Route path="consultation" element={<Consultation />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

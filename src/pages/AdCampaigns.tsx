@@ -5,7 +5,15 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DollarSign, MousePointerClick, TrendingUp, Target, Download, RefreshCw } from "lucide-react";
+import {
+  DollarSign,
+  MousePointerClick,
+  TrendingUp,
+  Target,
+  Download,
+  RefreshCw,
+  Plus,
+} from "lucide-react";
 import {
   LineChart,
   Line,
@@ -19,11 +27,12 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { supabase } from "@/lib/supabase";
-import { AdStatus, AdVariation } from "@/types/ads";
+import { AdStatus, AdVariation, CampaignData } from "@/types/ads";
 import { AdApprovalTab } from "@/components/dashboard/adsPageComp/AdApprovalTab";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdDetailsModal } from "@/components/dashboard/adsPageComp/AdDetailsModal";
-
+import { CampaignCreationModal } from "@/components/dashboard/adsPageComp/CampaignCreationModal";
+import { CampaignsListTab } from "@/components/dashboard/adsPageComp/CampaignsListTab";
 
 const performanceTrendData = [
   { date: "Jan 1", spend: 2100, conversions: 34, roas: 3.2 },
@@ -35,22 +44,64 @@ const performanceTrendData = [
 ];
 
 const platformComparisonData = [
-  { platform: "Google Ads", spend: 15400, clicks: 4234, conversions: 267, cpc: 3.64, roas: 3.8 },
-  { platform: "LinkedIn Ads", spend: 8900, clicks: 1876, conversions: 178, cpc: 4.74, roas: 4.2 },
+  {
+    platform: "Google Ads",
+    spend: 15400,
+    clicks: 4234,
+    conversions: 267,
+    cpc: 3.64,
+    roas: 3.8,
+  },
+  {
+    platform: "LinkedIn Ads",
+    spend: 8900,
+    clicks: 1876,
+    conversions: 178,
+    cpc: 4.74,
+    roas: 4.2,
+  },
 ];
 
 const googleCampaignsData = [
-  { name: "Healthcare IT Solutions - Search", spend: 5200, impressions: 124000, ctr: 4.2, conversions: 89, cpa: 58.43 },
-  { name: "HIPAA Compliance Guide - Display", spend: 3800, impressions: 456000, ctr: 1.8, conversions: 67, cpa: 56.72 },
-  { name: "Hospital Cost Reduction - Retargeting", spend: 2900, impressions: 89000, ctr: 3.9, conversions: 54, cpa: 53.70 },
-  { name: "Medical Device Security - Search", spend: 3500, impressions: 98000, ctr: 4.5, conversions: 57, cpa: 61.40 },
+  {
+    name: "Healthcare IT Solutions - Search",
+    spend: 5200,
+    impressions: 124000,
+    ctr: 4.2,
+    conversions: 89,
+    cpa: 58.43,
+  },
+  {
+    name: "HIPAA Compliance Guide - Display",
+    spend: 3800,
+    impressions: 456000,
+    ctr: 1.8,
+    conversions: 67,
+    cpa: 56.72,
+  },
+  {
+    name: "Hospital Cost Reduction - Retargeting",
+    spend: 2900,
+    impressions: 89000,
+    ctr: 3.9,
+    conversions: 54,
+    cpa: 53.7,
+  },
+  {
+    name: "Medical Device Security - Search",
+    spend: 3500,
+    impressions: 98000,
+    ctr: 4.5,
+    conversions: 57,
+    cpa: 61.4,
+  },
 ];
 
 async function getAdVariations(): Promise<AdVariation[]> {
   const { data, error } = await supabase
-    .from('ad_variations')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .from("ad_variations")
+    .select("*")
+    .order("created_at", { ascending: false });
 
   if (error) throw error;
   return data || [];
@@ -62,6 +113,8 @@ export default function AdCampaigns() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [selectedAd, setSelectedAd] = useState<AdVariation | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
 
   const { user, loading: authLoading } = useAuth();
 
@@ -69,14 +122,14 @@ export default function AdCampaigns() {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('ad_variations')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from("ad_variations")
+        .select("*")
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       setAds(data || []);
     } catch (error) {
-      console.error('Error fetching ads:', error);
+      console.error("Error fetching ads:", error);
     } finally {
       setLoading(false);
     }
@@ -86,34 +139,35 @@ export default function AdCampaigns() {
     fetchAds();
   }, []);
 
-  const handleStatusChange = async (id: string, status: AdStatus, adminName: string) => {
+  const handleStatusChange = async (
+    id: string,
+    status: AdStatus,
+    adminName: string
+  ) => {
     try {
       setUpdatingId(id);
 
       const updateData: Partial<AdVariation> = {
         status,
-        approved_by: status !== 'pending' ? adminName : null,
-        approved_at: status !== 'pending' ? new Date().toISOString() : null
+        approved_by: status !== "pending" ? adminName : null,
+        approved_at: status !== "pending" ? new Date().toISOString() : null,
       };
 
       // Update in Supabase
       const { error } = await supabase
-        .from('ad_variations')
+        .from("ad_variations")
         .update(updateData)
-        .eq('id', id);
+        .eq("id", id);
 
       if (error) throw error;
 
       // Update local state immediately
-      setAds(prev => prev.map(ad =>
-        ad.id === id
-          ? { ...ad, ...updateData }
-          : ad
-      ));
-
+      setAds((prev) =>
+        prev.map((ad) => (ad.id === id ? { ...ad, ...updateData } : ad))
+      );
     } catch (error) {
-      console.error('Error updating ad status:', error);
-      alert('Failed to update ad status. Please try again.');
+      console.error("Error updating ad status:", error);
+      alert("Failed to update ad status. Please try again.");
     } finally {
       setUpdatingId(null);
     }
@@ -127,6 +181,12 @@ export default function AdCampaigns() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedAd(null);
+  };
+
+  const handleCampaignCreated = (campaign: CampaignData) => {
+    setCampaigns((prev) => [campaign, ...prev]);
+    // Optionally show a success message
+    alert("Campaign created successfully!");
   };
 
   // Show loading state while checking authentication
@@ -147,8 +207,14 @@ export default function AdCampaigns() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
-          <p className="text-muted-foreground mb-4">Please log in to access the ad approval dashboard.</p>
-          <Button onClick={() => supabase.auth.signInWithOAuth({ provider: 'google' })}>
+          <p className="text-muted-foreground mb-4">
+            Please log in to access the ad approval dashboard.
+          </p>
+          <Button
+            onClick={() =>
+              supabase.auth.signInWithOAuth({ provider: "google" })
+            }
+          >
             Sign In
           </Button>
         </div>
@@ -162,7 +228,9 @@ export default function AdCampaigns() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Ad Campaigns</h1>
-          <p className="text-muted-foreground mt-1">Agents 6-8 • Google Ads, LinkedIn, and optimization analytics</p>
+          <p className="text-muted-foreground mt-1">
+            Agents 6-8 • Google Ads, LinkedIn, and optimization analytics
+          </p>
         </div>
         <Button>
           <Download className="h-4 w-4 mr-2" />
@@ -214,7 +282,11 @@ export default function AdCampaigns() {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="date" className="text-xs" />
                 <YAxis yAxisId="left" className="text-xs" />
-                <YAxis yAxisId="right" orientation="right" className="text-xs" />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  className="text-xs"
+                />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
@@ -223,9 +295,30 @@ export default function AdCampaigns() {
                   }}
                 />
                 <Legend />
-                <Line yAxisId="left" type="monotone" dataKey="spend" name="Spend ($)" stroke="hsl(var(--chart-1))" strokeWidth={2} />
-                <Line yAxisId="left" type="monotone" dataKey="conversions" name="Conversions" stroke="hsl(var(--chart-4))" strokeWidth={2} />
-                <Line yAxisId="right" type="monotone" dataKey="roas" name="ROAS (x)" stroke="hsl(var(--chart-2))" strokeWidth={2} />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="spend"
+                  name="Spend ($)"
+                  stroke="hsl(var(--chart-1))"
+                  strokeWidth={2}
+                />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="conversions"
+                  name="Conversions"
+                  stroke="hsl(var(--chart-4))"
+                  strokeWidth={2}
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="roas"
+                  name="ROAS (x)"
+                  stroke="hsl(var(--chart-2))"
+                  strokeWidth={2}
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -249,12 +342,28 @@ export default function AdCampaigns() {
                   }}
                 />
                 <Legend />
-                <Bar dataKey="conversions" name="Conversions" fill="hsl(var(--chart-4))" />
-                <Bar dataKey="roas" name="ROAS (x)" fill="hsl(var(--chart-2))" />
+                <Bar
+                  dataKey="conversions"
+                  name="Conversions"
+                  fill="hsl(var(--chart-4))"
+                />
+                <Bar
+                  dataKey="roas"
+                  name="ROAS (x)"
+                  fill="hsl(var(--chart-2))"
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Create Campaign Button */}
+      <div className="flex justify-end">
+        <Button onClick={() => setIsCreateModalOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Campaign
+        </Button>
       </div>
 
       {/* Campaigns Detail with Ad Approval Tab */}
@@ -265,11 +374,16 @@ export default function AdCampaigns() {
         <CardContent>
           <Tabs defaultValue="approval" className="w-full ">
             <TabsList className="mb-4 flex flex-wrap">
+              <TabsTrigger value="campaigns">Created Campaigns</TabsTrigger>
               <TabsTrigger value="approval">Ad Approval</TabsTrigger>
               <TabsTrigger value="google">Google Ads</TabsTrigger>
               <TabsTrigger value="linkedin">LinkedIn Ads</TabsTrigger>
               <TabsTrigger value="optimization">AI Optimization</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="campaigns">
+              <CampaignsListTab campaigns={campaigns} />
+            </TabsContent>
 
             <TabsContent value="approval">
               <AdApprovalTab
@@ -277,7 +391,6 @@ export default function AdCampaigns() {
                 loading={loading}
                 updatingId={updatingId}
                 onViewDetails={handleViewDetails}
-
                 onStatusChange={handleStatusChange}
                 onRefresh={fetchAds}
               />
@@ -288,23 +401,50 @@ export default function AdCampaigns() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Campaign Name</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">Spend</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">Impressions</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">CTR %</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">Conversions</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">CPA</th>
+                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                        Campaign Name
+                      </th>
+                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">
+                        Spend
+                      </th>
+                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">
+                        Impressions
+                      </th>
+                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">
+                        CTR %
+                      </th>
+                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">
+                        Conversions
+                      </th>
+                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">
+                        CPA
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {googleCampaignsData.map((campaign, index) => (
-                      <tr key={index} className="border-b border-border hover:bg-muted/50 transition-colors">
-                        <td className="py-3 px-4 font-medium">{campaign.name}</td>
-                        <td className="py-3 px-4 text-right">${campaign.spend.toLocaleString()}</td>
-                        <td className="py-3 px-4 text-right text-muted-foreground">{campaign.impressions.toLocaleString()}</td>
-                        <td className="py-3 px-4 text-right font-semibold text-primary">{campaign.ctr}%</td>
-                        <td className="py-3 px-4 text-right font-semibold">{campaign.conversions}</td>
-                        <td className="py-3 px-4 text-right text-muted-foreground">${campaign.cpa.toFixed(2)}</td>
+                      <tr
+                        key={index}
+                        className="border-b border-border hover:bg-muted/50 transition-colors"
+                      >
+                        <td className="py-3 px-4 font-medium">
+                          {campaign.name}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          ${campaign.spend.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-4 text-right text-muted-foreground">
+                          {campaign.impressions.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-4 text-right font-semibold text-primary">
+                          {campaign.ctr}%
+                        </td>
+                        <td className="py-3 px-4 text-right font-semibold">
+                          {campaign.conversions}
+                        </td>
+                        <td className="py-3 px-4 text-right text-muted-foreground">
+                          ${campaign.cpa.toFixed(2)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -324,9 +464,12 @@ export default function AdCampaigns() {
                   <div className="flex items-start gap-3">
                     <TrendingUp className="h-5 w-5 text-success mt-0.5" />
                     <div>
-                      <h4 className="font-semibold text-success">Bid Optimization Applied</h4>
+                      <h4 className="font-semibold text-success">
+                        Bid Optimization Applied
+                      </h4>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Increased bids by 15% on "Healthcare IT Solutions" campaign - CTR improved by 0.8%
+                        Increased bids by 15% on "Healthcare IT Solutions"
+                        campaign - CTR improved by 0.8%
                       </p>
                     </div>
                   </div>
@@ -335,9 +478,12 @@ export default function AdCampaigns() {
                   <div className="flex items-start gap-3">
                     <Target className="h-5 w-5 text-primary mt-0.5" />
                     <div>
-                      <h4 className="font-semibold text-primary">Budget Reallocation Recommended</h4>
+                      <h4 className="font-semibold text-primary">
+                        Budget Reallocation Recommended
+                      </h4>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Shift $500 from Display to Search campaigns for better ROAS
+                        Shift $500 from Display to Search campaigns for better
+                        ROAS
                       </p>
                     </div>
                   </div>
@@ -352,6 +498,12 @@ export default function AdCampaigns() {
         ad={selectedAd}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+      />
+
+      <CampaignCreationModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={handleCampaignCreated}
       />
     </div>
   );
