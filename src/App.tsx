@@ -40,9 +40,9 @@ const App = () => (
             <Route
               path="/"
               element={
-                <ProtectedRoute>
+                // <ProtectedRoute>
                   <DashboardLayout />
-                </ProtectedRoute>
+                // </ProtectedRoute>
               }
             >
               <Route index element={<ExecutiveOverview />} />

@@ -40,7 +40,7 @@ export function useUserFiles({ userId, autoFetch = true, status, category }: Use
                     variant: 'destructive',
                 });
             }
-        } catch (err: any) {
+        } catch (err :any) {
             const errorMessage = err.message || 'Failed to fetch files';
             setError(errorMessage);
             toast({

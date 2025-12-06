@@ -8,7 +8,6 @@ interface UserData {
     userEmail: string;
     userName: string;
 }
-
 export function useUpload() {
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
     const { toast } = useToast();
