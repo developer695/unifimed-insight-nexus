@@ -9,6 +9,7 @@ export interface UploadedFile {
     category: UploadCategory;
     cloudinaryUrl?: string;
     fileId?: string;
+    action?: "clear" | "update";
 }
 
 export interface SignedUploadData {
