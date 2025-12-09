@@ -4,7 +4,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardLayout } from "./components/dashboard/DashboardLayout";
 import Login from "./pages/Login";
 import ExecutiveOverview from "./pages/ExecutiveOverview";
@@ -22,9 +21,9 @@ import NotFound from "./pages/NotFound";
 import Analytics from "./pages/Analytics";
 import CostROI from "./pages/CostROI";
 import SystemHealth from "./pages/SystemHealth";
-import Assessment from "./pages/assessment";
-import Audit from "./pages/audit";
-import Consultation from "./pages/consultation";
+import Assessment from "./pages/Assessment";
+import Audit from "./pages/Audit";
+import Consultation from "./pages/Consultation";
 
 const queryClient = new QueryClient();
 
@@ -41,7 +40,7 @@ const App = () => (
               path="/"
               element={
                 // <ProtectedRoute>
-                  <DashboardLayout />
+                <DashboardLayout />
                 // </ProtectedRoute>
               }
             >
