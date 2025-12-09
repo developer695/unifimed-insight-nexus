@@ -2,7 +2,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import Login from './pages/Login';
@@ -21,14 +21,15 @@ import NotFound from './pages/NotFound';
 import Analytics from './pages/Analytics';
 import CostROI from './pages/CostROI';
 import SystemHealth from './pages/SystemHealth';
-import Assessment from './pages/assessment';
-import Audit from './pages/audit';
-import Consultation from './pages/consultation';
+
 import { useEffect } from 'react';
 import { injectGTM } from './lib/loadGTM';
 import { useLocation } from 'react-router-dom';
 import { useGTMPageView } from './hooks/useGTMPageView';
 import { usePageSpecificGTM } from './hooks/usePageSpecificGTM';
+import Assessment from './pages/Assessment';
+import Audit from './pages/Audit';
+import Consultation from './pages/Consultation';
 declare global {
   interface Window {
     dataLayer: any[];

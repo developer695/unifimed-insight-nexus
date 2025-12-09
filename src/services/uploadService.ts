@@ -2,24 +2,38 @@ import { SignedUploadData, SaveFileRequest, UploadCategory, FileRecord } from '@
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-export async function generateSignedUrl(
-    filename: string,
-    category: UploadCategory,
-    userId: string,
-    userEmail: string
+interface GenerateSignedUrlParams {
+    filename: string;
+    category: UploadCategory;
+    userId: string;
+    userEmail: string;
+    action?: "clear" | "update";
+}
+
+
+export async function generateSignedUrl(filename: string, category: UploadCategory, userId: string, userEmail: string, action?: "clear" | "update"
+
 ): Promise<{ success: boolean; data: SignedUploadData; message: string }> {
+
+
+    const requestBody: GenerateSignedUrlParams = {
+        filename,
+        category,
+        userId,
+        userEmail,
+    };
+
+    // Only include action for rules upload
+    if (category === "rules_upload_pdf" && action) {
+        requestBody.action = action;
+    }
 
     const response = await fetch(`${BACKEND_URL}/api/generate-upload-url`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            filename,
-            category,
-            userId,
-            userEmail,
-        }),
+        body: JSON.stringify(requestBody),
     });
 
     const result = await response.json();
@@ -81,7 +95,7 @@ export async function uploadToCloudinary(file: File, signedData: SignedUploadDat
         const result = await response.json();
 
         return result;
-    } catch (error: any) {
+    } catch (error) {
         console.error('☁️ [uploadToCloudinary] Upload error:', error);
         throw error;
     }
@@ -136,7 +150,7 @@ export async function getUserFiles(
         console.log('📁 [getUserFiles] Response:', result);
 
         return result;
-    } catch (error: any) {
+    } catch (error) {
         console.error('📁 [getUserFiles] Error:', error);
         return {
             success: false,
@@ -162,7 +176,7 @@ export async function deleteUserFile(fileId: string): Promise<{ success: boolean
         console.log('🗑️ [deleteUserFile] Response:', result);
 
         return result;
-    } catch (error: any) {
+    } catch (error) {
         console.error('🗑️ [deleteUserFile] Error:', error);
         return {
             success: false,
