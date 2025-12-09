@@ -30,6 +30,7 @@ import { usePageSpecificGTM } from './hooks/usePageSpecificGTM';
 import Assessment from './pages/Assessment';
 import Audit from './pages/Audit';
 import Consultation from './pages/Consultation';
+import { ProtectedRoute } from './components/ProtectedRoute';
 declare global {
   interface Window {
     dataLayer: any[];
@@ -47,7 +48,7 @@ const App = () => {
 
   useEffect(() => {
     if (ALLOWED_ROUTES.includes(location.pathname)) {
-      injectGTM('GTM-TL3PRD4M'); // inject GTM script if not loaded yet
+      injectGTM('GTM-TL3PRD4M');
 
       // Push SPA pageview to GTM
       window.dataLayer = window.dataLayer || [];
@@ -67,7 +68,14 @@ const App = () => {
           <Routes>
             <Route path='/login' element={<Login />} />
 
-            <Route path='/' element={<DashboardLayout />}>
+            <Route
+              path='/'
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }
+            >
               <Route index element={<ExecutiveOverview />} />
               <Route path='voice-engine' element={<VoiceEngine />} />
               <Route
