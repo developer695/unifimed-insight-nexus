@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthError } from "@supabase/supabase-js";
-import { Eye, EyeOff } from "lucide-react"; // import icons
+import { Eye, EyeOff } from "lucide-react"; 
 
 export function Login() {
   const [email, setEmail] = useState("");
@@ -67,6 +67,7 @@ export function Login() {
                 type="email"
                 placeholder="name@example.com"
                 value={email}
+
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}

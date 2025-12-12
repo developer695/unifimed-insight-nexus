@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { act, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { UploadCategorySelector } from "@/components/uploads/UploadCategorySelector";
 import { FileUploadArea } from "@/components/uploads/FileUploadArea";
 import { UserFilesList } from "@/components/uploads/Userfileslist";
+import { useExistingRules } from "@/hooks/useExistingRules";
 
 export default function UploadPage() {
   const [selectedCategory, setSelectedCategory] = useState<UploadCategory | null>(null);
@@ -37,6 +38,8 @@ export default function UploadPage() {
     autoFetch: true,
   });
 
+  const { hasExistingRules, loading: loadingRulesCheck } = useExistingRules();
+
   // Get user data from auth context
   const getUserData = () => {
     if (!user) {
@@ -52,7 +55,7 @@ export default function UploadPage() {
     };
   };
 
-  const handleFilesSelect = async (files: File[], category: UploadCategory) => {
+  const handleFilesSelect = async (files: File[], category: UploadCategory, action?: "clear" | "update") => {
     if (!user) {
       toast({
         title: "Authentication required",
@@ -66,14 +69,14 @@ export default function UploadPage() {
       const userData = getUserData();
 
       for (const file of files) {
-        await uploadFile(file, category, userData);
+        await uploadFile(file, category, userData, action);
       }
 
       // Refresh the files list after upload
       setTimeout(() => {
         fetchFiles();
       }, 1000);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Upload failed",
         description: error.message,
@@ -99,7 +102,7 @@ export default function UploadPage() {
     try {
       const userData = getUserData();
       await retryUpload(index, userData);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Retry failed",
         description: error.message,
@@ -187,6 +190,8 @@ export default function UploadPage() {
               selectedCategory={selectedCategory}
               onFilesSelect={handleFilesSelect}
               isUploading={isUploading}
+              hasExistingRules={hasExistingRules}
+              loadingRulesCheck={loadingRulesCheck}
             />
 
             {/* Current Upload Progress */}

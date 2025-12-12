@@ -1,23 +1,432 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>UnifiMed Analytics Dashboard - Marketing Automation Intelligence</title>
-    <meta name="description" content="Comprehensive analytics dashboard for UnifiMed's 17-agent marketing automation system. Real-time monitoring, ROI tracking, and operational insights." />
+    <title>
+      UnifiMed Analytics Dashboard - Marketing Automation Intelligence
+    </title>
+    <meta name="description" content="Comprehensive analytics dashboard..." />
     <meta name="author" content="UnifiMed" />
 
-    <meta property="og:title" content="UnifiMed Analytics Dashboard - Marketing Automation Intelligence" />
-    <meta property="og:description" content="Comprehensive analytics dashboard for UnifiMed's 17-agent marketing automation system. Real-time monitoring, ROI tracking, and operational insights." />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <!-- Global Google Tag Manager (head) -->
+    <script>
+      (function () {
+        // ---------- CONFIG ----------
+        const WEBHOOK_URL =
+          'https://unifimed-intelligent.app.n8n.cloud/webhook/website-tracking-webhook';
+        const SEND_BEACON_SUPPORTED = !!navigator.sendBeacon;
+        const STORAGE_KEY = 'uf_session_id_v1';
+        const SESSION_TTL_MS = 1000 * 60 * 60 * 24; // 24 hours (simple regeneration policy)
+        // ----------------------------
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+        // Utilities
+        function nowISO() {
+          return new Date().toISOString();
+        }
+        function safeFetch(url, bodyObj, useBeaconFallback = true) {
+          const payload = JSON.stringify(bodyObj || {});
+          if (
+            (useBeaconFallback &&
+              SEND_BEACON_SUPPORTED &&
+              bodyObj &&
+              bodyObj.event === 'time_on_page') ||
+            bodyObj.event === 'scroll_depth'
+          ) {
+            // prefer sendBeacon for unload-critical events
+            try {
+              return navigator.sendBeacon(url, payload);
+            } catch (e) {
+              /* fallthrough to fetch */
+            }
+          }
+          return fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload,
+            keepalive: true,
+          }).catch(() => {
+            /* suppress errors in page */
+          });
+        }
+
+        // Session ID management (persistent across pages)
+        function getSessionId() {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) {
+              const id =
+                'sid_' +
+                Math.random().toString(36).slice(2, 11) +
+                '_' +
+                Date.now();
+              const payload = { id, created: Date.now() };
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+              return id;
+            }
+            const parsed = JSON.parse(raw);
+            // simple TTL: regenerate after TTL
+            if (Date.now() - parsed.created > SESSION_TTL_MS) {
+              const id =
+                'sid_' +
+                Math.random().toString(36).slice(2, 11) +
+                '_' +
+                Date.now();
+              const payload = { id, created: Date.now() };
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+              return id;
+            }
+            return parsed.id;
+          } catch (e) {
+            return 'sid_fallback_' + Date.now();
+          }
+        }
+
+        // UTM and query extraction
+        function getUTMs() {
+          const params = new URLSearchParams(window.location.search);
+          return {
+            utm_source: params.get('utm_source') || null,
+            utm_medium: params.get('utm_medium') || null,
+            utm_campaign: params.get('utm_campaign') || null,
+            utm_term: params.get('utm_term') || null,
+            utm_content: params.get('utm_content') || null,
+            gclid: params.get('gclid') || null,
+            fbclid: params.get('fbclid') || null,
+          };
+        }
+
+        // Device type
+        function deviceType() {
+          const w = window.innerWidth;
+          if (w < 768) return 'mobile';
+          if (w < 1024) return 'tablet';
+          return 'desktop';
+        }
+
+        // Common payload fields
+        function commonFields() {
+          return {
+            session_id: getSessionId(),
+            page_url: location.href,
+            page_path: location.pathname + location.search,
+            page_title: document.title,
+            referrer: document.referrer || 'direct',
+            user_agent: navigator.userAgent,
+            language: navigator.language || null,
+            device_type: deviceType(),
+            screen_resolution:
+              window.screen && window.screen.width
+                ? window.screen.width + 'x' + window.screen.height
+                : null,
+            timestamp: nowISO(),
+            // ask backend to capture IP & country (backend should use request IP)
+            request_ip_lookup: true,
+          };
+        }
+
+        // ---------- PAGE VIEW ----------
+        (function sendPageView() {
+          const payload = Object.assign(
+            {
+              event: 'page_view',
+            },
+            commonFields(),
+            getUTMs()
+          );
+          safeFetch(WEBHOOK_URL, payload, false);
+        })();
+
+        // ---------- TIME ON PAGE ----------
+        const pageStart = Date.now();
+        function sendTimeOnPage() {
+          const timeMs = Date.now() - pageStart;
+          const payload = Object.assign(
+            {
+              event: 'time_on_page',
+              time_spent_ms: timeMs,
+            },
+            commonFields()
+          );
+          // use sendBeacon for reliability on unload
+          if (SEND_BEACON_SUPPORTED) {
+            try {
+              navigator.sendBeacon(WEBHOOK_URL, JSON.stringify(payload));
+              return;
+            } catch (e) {
+              /* fallback */
+            }
+          }
+          // fallback fetch (keepalive)
+          fetch(WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            keepalive: true,
+          }).catch(() => {});
+        }
+        window.addEventListener('pagehide', sendTimeOnPage); // pagehide better for SPA/unload
+
+        // ---------- SCROLL DEPTH ----------
+        let maxScrollPercent = 0;
+        function updateScrollDepth() {
+          try {
+            const total = Math.max(
+              document.body.scrollHeight,
+              document.documentElement.scrollHeight
+            );
+            const current = window.scrollY + window.innerHeight;
+            const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+            if (pct > maxScrollPercent) maxScrollPercent = pct;
+          } catch (e) {}
+        }
+        window.addEventListener('scroll', throttle(updateScrollDepth, 250));
+        // send on unload
+        function sendScrollDepth() {
+          const payload = Object.assign(
+            {
+              event: 'scroll_depth',
+              scroll_percent: maxScrollPercent,
+            },
+            commonFields()
+          );
+          if (SEND_BEACON_SUPPORTED) {
+            try {
+              navigator.sendBeacon(WEBHOOK_URL, JSON.stringify(payload));
+              return;
+            } catch (e) {}
+          }
+          fetch(WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            keepalive: true,
+          }).catch(() => {});
+        }
+        window.addEventListener('pagehide', sendScrollDepth);
+
+        // ---------- CLICK TRACKING (delegated) ----------
+        // Elements: Add attribute data-uf-track="click" and optional data-uf-action, data-uf-label, data-uf-value, data-uf-id
+        document.addEventListener(
+          'click',
+          function (e) {
+            try {
+              const el =
+                e.target.closest && e.target.closest('[data-uf-track]');
+              if (!el) return;
+              const trackType = el.getAttribute('data-uf-track'); // e.g. click, add_to_cart, purchase, signup
+              const action = el.getAttribute('data-uf-action') || 'click';
+              const label =
+                el.getAttribute('data-uf-label') ||
+                (el.innerText || el.value || '').slice(0, 200);
+              const value = el.getAttribute('data-uf-value') || null;
+              const itemId = el.getAttribute('data-uf-id') || null;
+
+              const payloadBase = Object.assign(
+                {
+                  event:
+                    trackType === 'add_to_cart'
+                      ? 'add_to_cart'
+                      : trackType === 'purchase'
+                      ? 'purchase'
+                      : trackType === 'signup'
+                      ? 'signup'
+                      : 'button_click',
+                  action,
+                  label,
+                  value,
+                  item_id: itemId,
+                  click_x: e.clientX,
+                  click_y: e.clientY,
+                },
+                commonFields()
+              );
+
+              // For add_to_cart/purchase/signup we attempt to find richer data on the element (data attributes)
+              // Example attributes for ecommerce: data-uf-items='[{"id":"sku123","name":"Product","price":"19.99","qty":1}]'
+
+              const itemsAttr = el.getAttribute('data-uf-items');
+              if (itemsAttr) {
+                try {
+                  payloadBase.items = JSON.parse(itemsAttr);
+                } catch (e) {}
+              }
+
+              safeFetch(WEBHOOK_URL, payloadBase, false);
+            } catch (e) {}
+          },
+          false
+        );
+
+        // ---------- FORM SUBMIT / LEAD CAPTURE ----------
+        // Add data-uf-track="form" to form elements you want tracked. Inside the form,
+        // inputs should have data-uf-name="name" / data-uf-email="email" / data-uf-phone="phone" OR default to finding common input names.
+        document.addEventListener(
+          'submit',
+          function (e) {
+            try {
+              const form = e.target;
+              if (!form || !form.matches || !form.matches('[data-uf-track]'))
+                return;
+
+              // prevent capturing sensitive fields: you'll still capture what user entered (be careful & legal)
+              // Extract lead fields (best-effort)
+              const lead = {};
+              const elName =
+                form.querySelector('[data-uf-name]') ||
+                form.querySelector(
+                  "input[name*=name], input[name*='full_name'], input[id*='name']"
+                );
+              const elEmail =
+                form.querySelector('[data-uf-email]') ||
+                form.querySelector(
+                  "input[type='email'], input[name*='email'], input[id*='email']"
+                );
+              const elPhone =
+                form.querySelector('[data-uf-phone]') ||
+                form.querySelector(
+                  "input[name*='phone'], input[id*='phone'], input[type='tel']"
+                );
+
+              if (elName && elName.value) lead.name = elName.value;
+              if (elEmail && elEmail.value) lead.email = elEmail.value;
+              if (elPhone && elPhone.value) lead.phone = elPhone.value;
+
+              // if attributes explicitly declare fields, prefer those
+              const declaredName = form.getAttribute('data-uf-field-name');
+              if (declaredName) {
+                const el = form.querySelector(`[name="${declaredName}"]`);
+                if (el && el.value) lead.name = el.value;
+              }
+
+              const payload = Object.assign(
+                {
+                  event: 'form_submit',
+                  form_id:
+                    form.getAttribute('id') ||
+                    form.getAttribute('name') ||
+                    null,
+                  form_name: form.getAttribute('data-uf-form-name') || null,
+                  lead: Object.keys(lead).length ? lead : null,
+                },
+                commonFields()
+              );
+
+              // send immediately; don't block form
+              safeFetch(WEBHOOK_URL, payload, false);
+
+              // do not prevent default submission — tracking should not block user's action
+            } catch (e) {}
+          },
+          true
+        );
+
+        // ---------- PURCHASE / ECOMMERCE SPECIALS ----------
+        // Use elements with data-uf-track="purchase" and data-uf-items='[{"id":"","name":"", "price": 0, "qty":1}]' and optional data-uf-revenue
+        // If your checkout completes on a thank-you page, you can also render a small script server-side that calls the webhook directly from server.
+        // This client-side method is a fallback:
+        function sendPurchaseEvent(details) {
+          const payload = Object.assign(
+            {
+              event: 'purchase',
+              revenue: details.revenue || null,
+              order_id: details.order_id || null,
+              coupon: details.coupon || null,
+              items: details.items || [],
+            },
+            commonFields()
+          );
+          safeFetch(WEBHOOK_URL, payload, false);
+        }
+
+        // Listen for elements marked as purchase (delegated click)
+        // Example: <button data-uf-track="purchase" data-uf-items='[...]' data-uf-revenue="99.95" data-uf-action="complete_purchase">
+        // The delegated click handler above already sends purchase events when data-uf-track="purchase" exists on clicked element.
+
+        // ---------- HELPER: throttle ----------
+        function throttle(func, wait) {
+          let last = 0,
+            timeout = null;
+          return function () {
+            const now = Date.now();
+            const args = arguments;
+            const later = function () {
+              last = now;
+              timeout = null;
+              func.apply(null, args);
+            };
+            if (!timeout) {
+              const remaining = wait - (now - last);
+              if (remaining <= 0) {
+                later();
+              } else {
+                timeout = setTimeout(later, remaining);
+              }
+            }
+          };
+        }
+
+        // ---------- OPTIONAL: expose helper to window for manual calls ----------
+        window.UFTracking = {
+          sendEvent: function (name, data) {
+            try {
+              const payload = Object.assign(
+                { event: name },
+                commonFields(),
+                data || {}
+              );
+              safeFetch(WEBHOOK_URL, payload, false);
+            } catch (e) {}
+          },
+          sendPurchase: sendPurchaseEvent,
+          getSessionId: getSessionId,
+        };
+
+        // ---------- USAGE NOTES ----------
+        // 1) Button / click / ecommerce:
+        //    Add attributes to clickable elements:
+        //      data-uf-track="add_to_cart"         // or "purchase", "signup", "click"
+        //      data-uf-action="add"                // readable name
+        //      data-uf-label="Add white mug"       // human label
+        //      data-uf-value="19.99"               // optional
+        //      data-uf-id="sku123"                 // optional id
+        //      data-uf-items='[{"id":"sku123","name":"White Mug","price":19.99,"qty":1}]' // for cart/purchase
+        //
+        // 2) Forms:
+        //    <form data-uf-track data-uf-form-name="Contact Form">
+        //      <input name="full_name" data-uf-name />
+        //      <input type="email" data-uf-email />
+        //      <input name="phone" data-uf-phone />
+        //    </form>
+        //
+        // 3) Manual event from code:
+        //    window.UFTracking.sendEvent("custom_event", { foo:"bar" });
+        //
+        // 4) Server-side IP & country:
+        //    The script sets request_ip_lookup=true inside every payload. Your webhook server should:
+        //       - read client's IP from request (X-Forwarded-For or connection remote IP)
+        //       - perform a geo lookup (free or paid DB) and append country, region etc to the stored record.
+        //
+        // 5) For reliable purchases (highest accuracy) prefer server-side webhook call from your payment/checkout backend
+        //    with verified order_id and revenue — client-side purchase is best-effort only.
+      })();
+    </script>
+
+    <!-- End Global GTM (head) -->
   </head>
 
   <body>
+    <!-- Global Google Tag Manager (body noscript) -->
+    <noscript>
+      <iframe
+        src="https://www.googletagmanager.com/ns.html?id=GTM-PBSC3DFL"
+        height="0"
+        width="0"
+        style="display: none; visibility: hidden"
+      ></iframe>
+    </noscript>
+    <!-- End Global GTM (body) -->
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

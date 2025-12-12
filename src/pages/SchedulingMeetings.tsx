@@ -14,6 +14,20 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { useQuery } from "@tanstack/react-query";
+
+
+const fetchMeetings = async () => {
+  const { data, error } = await supabase
+    .from('meetings')
+    .select('*')
+    .order('meeting_date', { ascending: false });
+console.log("data",data)
+  if (error) throw new Error(error.message);
+  return data;
+};
+;
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -181,6 +195,38 @@ export default function SchedulingMeetings() {
 
   console.log("status", meetingTrendData);
 
+  const fetchMeetings = async () => {
+    const { data, error } = await supabase
+      .from("meetings")
+      .select("*")
+      .order("meeting_date", { ascending: false });
+  
+    if (error) throw new Error(error.message);
+    return data;
+  };
+
+  const { data: meetingsData, isLoading, error } = useQuery({
+    queryKey: ['meetings'],
+    queryFn: fetchMeetings,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Loading meetings...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-destructive">Error: {error.message}</p>
+      </div>
+    );
+  }
+console.log("meetingsData",meetingsData);
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -195,7 +241,7 @@ export default function SchedulingMeetings() {
         </Button>
       </div>
 
-      {/* KPI Cards */}
+     
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {loadingStats ? (
           <div className="col-span-4 text-muted-foreground">Loading stats…</div>
@@ -240,7 +286,7 @@ export default function SchedulingMeetings() {
         )}
       </div>
 
-      {/* Charts */}
+     
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -317,7 +363,7 @@ export default function SchedulingMeetings() {
     </Card>
       </div>
 
-      {/* Insights Table */}
+   
       <Card>
         <CardHeader>
           <CardTitle>Recent Meeting Insights (Read.AI)</CardTitle>
@@ -329,32 +375,115 @@ export default function SchedulingMeetings() {
                 <tr className="border-b border-border">
                   <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Date</th>
                   <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Prospect</th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Key Trigger</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Industry</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Duration</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Industry</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Duration</th>
                   <th className="text-center py-3 px-4 font-medium text-sm text-muted-foreground">Sentiment</th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Next Action</th>
+                  <th className="text-center py-3 px-4 font-medium text-sm text-muted-foreground">Engagement</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Key Triggers</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Next Steps</th>
+                  <th className="text-center py-3 px-4 font-medium text-sm text-muted-foreground">Transcript</th>
+                  <th className="text-center py-3 px-4 font-medium text-sm text-muted-foreground">Engagement</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Key Triggers</th>
+                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Next Steps</th>
+                  <th className="text-center py-3 px-4 font-medium text-sm text-muted-foreground">Transcript</th>
                 </tr>
               </thead>
               <tbody>
-                {insightsData.map((insight, index) => (
-                  <tr key={index} className="border-b border-border hover:bg-muted/50 transition-colors">
-                    <td className="py-3 px-4 text-sm text-muted-foreground">{insight.date}</td>
-                    <td className="py-3 px-4 font-medium">{insight.prospect}</td>
-                    <td className="py-3 px-4 text-sm">{insight.trigger}</td>
-                    <td className="py-3 px-4 text-center">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${insight.sentiment === "positive"
-                          ? "bg-success/10 text-success"
-                          : insight.sentiment === "neutral"
-                            ? "bg-primary/10 text-primary"
-                            : "bg-warning/10 text-warning"
-                          }`}
-                      >
-                        {insight.sentiment}
-                      </span>
+                {meetingsData && meetingsData.length > 0 ? (
+                  meetingsData.map((meeting, index) => {
+                    // Get the first meeting summary (since it's a one-to-many relation)
+                    const summary = meeting.meeting_summaries?.[0];
+                    
+                    return (
+                      <tr key={meeting.id || index} className="border-b border-border hover:bg-muted/50 transition-colors">
+                        <td className="py-3 px-4 text-sm text-muted-foreground">
+                          {new Date(meeting.meeting_date).toLocaleDateString()}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="font-medium">{meeting.prospect_name}</div>
+                          <div className="text-xs text-muted-foreground">{meeting.prospect_company}</div>
+                        </td>
+                        <td className="py-3 px-4 text-sm">{meeting.industry}</td>
+                        <td className="py-3 px-4 text-sm">{meeting.duration_minutes} min</td>
+                        <td className="py-3 px-4 text-center">
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                              summary?.overall_sentiment === "positive"
+                                ? "bg-success/10 text-success"
+                                : summary?.overall_sentiment === "neutral"
+                                ? "bg-primary/10 text-primary"
+                                : "bg-destructive/10 text-destructive"
+                            }`}
+                          >
+                            {summary?.overall_sentiment || "N/A"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                              summary?.engagement_level === "high"
+                                ? "bg-success/10 text-success"
+                                : summary?.engagement_level === "medium"
+                                ? "bg-warning/10 text-warning"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {summary?.engagement_level || "N/A"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          {meeting.buying_triggers && meeting.buying_triggers.length > 0 ? (
+                            <div className="space-y-1">
+                              {meeting.buying_triggers.map((trigger, i) => (
+                                <div key={i} className="flex items-center gap-1">
+                                  <span className={`w-2 h-2 rounded-full ${
+                                    trigger.priority === "high" ? "bg-destructive" : "bg-warning"
+                                  }`} />
+                                  <span className="text-xs">{trigger.trigger_text}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">None identified</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          {meeting.next_steps && meeting.next_steps.length > 0 ? (
+                            <div className="space-y-1">
+                              {meeting.next_steps.slice(0, 2).map((step, i) => (
+                                <div key={i} className="flex items-center gap-1">
+                                  <span className={`w-2 h-2 rounded-full ${
+                                    step.status === "completed" ? "bg-success" : "bg-primary"
+                                  }`} />
+                                  <span className="text-xs">{step.step_description}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">No next steps</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          {meeting.has_transcript ? (
+                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-success/10 text-success">
+                              ✓
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={9} className="py-8 text-center text-muted-foreground">
+                      No meetings found
                     </td>
-                    <td className="py-3 px-4 text-sm">{insight.nextAction}</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
