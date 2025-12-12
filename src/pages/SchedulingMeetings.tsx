@@ -14,6 +14,36 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+
+type MeetingStats = {
+  id: string;
+  meetings_this_month: number;
+  meetings_completed: number;
+  meetings_change: number;
+
+  no_show_rate: number;
+  no_show_change: number;
+  no_show_total: number;
+
+  avg_meeting_duration: number;
+  avg_duration_change: number;
+  duration_target: number;
+
+  read_ai_coverage: number;
+  read_ai_change: number;
+  transcripts_total: number;
+};
+type MeetingTrend = {
+  id: string;
+  date: string;       // formatted date for chart
+  scheduled: number;
+  completed: number;
+  noShows: number;
+};
+
+
 
 const meetingTrendData = [
   { date: "Jan 1", scheduled: 45, completed: 42, noShows: 3 },
@@ -24,38 +54,133 @@ const meetingTrendData = [
   { date: "Feb 5", scheduled: 64, completed: 60, noShows: 4 },
 ];
 
-const outcomesData = [
-  { outcome: "Follow-up Scheduled", count: 156 },
-  { outcome: "Deal Created", count: 89 },
-  { outcome: "Demo Requested", count: 134 },
-  { outcome: "No Next Step", count: 42 },
-];
 
-const insightsData = [
-  {
-    date: "2024-02-05",
-    prospect: "Sarah Johnson - HealthSys",
-    trigger: "Budget approved for Q2",
-    sentiment: "positive",
-    nextAction: "Send proposal by Feb 10",
-  },
-  {
-    date: "2024-02-04",
-    prospect: "Michael Chen - MediCorp",
-    trigger: "Current vendor contract ends in 60 days",
-    sentiment: "neutral",
-    nextAction: "Schedule technical demo",
-  },
-  {
-    date: "2024-02-04",
-    prospect: "Emily Rodriguez - CareCtr",
-    trigger: "Pricing concerns raised",
-    sentiment: "negative",
-    nextAction: "Prepare ROI analysis",
-  },
-];
+
+ const [insightsData, setInsightsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchInsightsData();
+  }, []);
+
+  const fetchInsightsData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("meeting_insights")
+        .select("date, prospect, trigger, sentiment, next_action")
+        .order("date", { ascending: false });
+
+      if (error) throw error;
+      setInsightsData(data || []);
+    } catch (error) {
+      console.error("Error fetching meeting insights:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+ 
+
+
 
 export default function SchedulingMeetings() {
+  const [stats, setStats] = useState<MeetingStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState<boolean>(false);
+  const [errorStats, setErrorStats] = useState<string | null>(null);
+  const [meetingTrendData, setMeetingTrendData] = useState<MeetingTrend[]>([]);
+  const [loadingTrend, setLoadingTrend] = useState(true);
+  const [errorTrend, setErrorTrend] = useState<string | null>(null);
+    const [outcomesData, setOutcomesData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchOutcomesData();
+  }, []);
+
+  // Fetch the latest row from Supabase
+
+  useEffect(() => {
+    const fetchMeetingStats = async () => {
+      setLoadingStats(true);
+
+      const { data, error } = await supabase
+        .from("meeting_stats")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error(error);
+        setErrorStats("Failed to load stats");
+      } else {
+        setStats(data);
+      }
+
+      setLoadingStats(false);
+    };
+
+    fetchMeetingStats();
+  }, []);
+  useEffect(() => {
+    const fetchMeetingTrend = async () => {
+      setLoadingTrend(true);
+      setErrorTrend(null);
+
+      const { data, error } = await supabase
+        .from("meeting_trends")
+        .select("*")
+        .order("date", { ascending: true });
+
+      if (error) {
+        console.error(error);
+        setErrorTrend("Failed to load meeting trend data.");
+        setLoadingTrend(false);
+        return;
+      }
+      console.log("data", data);
+
+      const mapped = data.map((row: any) => ({
+        id: row.id,
+        date: new Date(row.trend_date).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        }),
+        scheduled: row.scheduled,
+        completed: row.completed,
+        noShows: row.no_shows,
+      }));
+
+      setMeetingTrendData(mapped);
+      setLoadingTrend(false);
+    };
+
+    fetchMeetingTrend();
+  }, []);
+
+  const fetchOutcomesData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("meeting_outcomes")
+        .select("outcome, count")
+        .order("count", { ascending: false });
+
+      if (error) throw error;
+      setOutcomesData(data || []);
+    } catch (error) {
+      console.error("Error fetching meeting outcomes:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+
+  console.log("status", meetingTrendData);
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -72,34 +197,47 @@ export default function SchedulingMeetings() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Meetings This Month"
-          value="328"
-          change={14.7}
-          icon={<Calendar className="h-5 w-5" />}
-          subtitle="278 completed"
-        />
-        <StatCard
-          title="No-Show Rate"
-          value="6.8%"
-          change={-2.1}
-          icon={<Users className="h-5 w-5" />}
-          subtitle="22 no-shows"
-        />
-        <StatCard
-          title="Avg Meeting Duration"
-          value="42 min"
-          change={3.5}
-          icon={<TrendingUp className="h-5 w-5" />}
-          subtitle="Target: 45 min"
-        />
-        <StatCard
-          title="Read.AI Coverage"
-          value="96.4%"
-          change={1.2}
-          icon={<Mic className="h-5 w-5" />}
-          subtitle="268 transcripts"
-        />
+        {loadingStats ? (
+          <div className="col-span-4 text-muted-foreground">Loading stats…</div>
+        ) : errorStats ? (
+          <div className="col-span-4 text-destructive">{errorStats}</div>
+        ) : stats ? (
+          <>
+            <StatCard
+              title="Meetings This Month"
+              value={stats.meetings_this_month}
+              change={stats.meetings_change}
+              icon={<Calendar className="h-5 w-5" />}
+              subtitle={`${stats.meetings_completed} completed`}
+            />
+
+            <StatCard
+              title="No-Show Rate"
+              value={`${stats.no_show_rate}%`}
+              change={stats.no_show_change}
+              icon={<Users className="h-5 w-5" />}
+              subtitle={`${stats.no_show_total} no-shows`}
+            />
+
+            <StatCard
+              title="Avg Meeting Duration"
+              value={`${stats.avg_meeting_duration} min`}
+              change={stats.avg_duration_change}
+              icon={<TrendingUp className="h-5 w-5" />}
+              subtitle={`Target: ${stats.duration_target} min`}
+            />
+
+            <StatCard
+              title="Read.AI Coverage"
+              value={`${stats.read_ai_coverage}%`}
+              change={stats.read_ai_change}
+              icon={<Mic className="h-5 w-5" />}
+              subtitle={`${stats.transcripts_total} transcripts`}
+            />
+          </>
+        ) : (
+          <div className="col-span-4 text-muted-foreground">No stats found.</div>
+        )}
       </div>
 
       {/* Charts */}
@@ -109,49 +247,74 @@ export default function SchedulingMeetings() {
             <CardTitle>Meeting Completion Trend</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={meetingTrendData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" className="text-xs" />
-                <YAxis className="text-xs" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "0.5rem",
-                  }}
-                />
-                <Legend />
-                <Line type="monotone" dataKey="scheduled" name="Scheduled" stroke="hsl(var(--chart-1))" strokeWidth={2} />
-                <Line type="monotone" dataKey="completed" name="Completed" stroke="hsl(var(--chart-4))" strokeWidth={2} />
-                <Line type="monotone" dataKey="noShows" name="No-Shows" stroke="hsl(var(--chart-5))" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
+            {loadingTrend ? (
+              <div className="text-sm text-muted-foreground">Loading trend...</div>
+            ) : errorTrend ? (
+              <div className="text-sm text-destructive">{errorTrend}</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={meetingTrendData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="date" className="text-xs" />
+                  <YAxis className="text-xs" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "0.5rem",
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="scheduled"
+                    name="Scheduled"
+                    stroke="hsl(var(--chart-1))"
+                    strokeWidth={2}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="completed"
+                    name="Completed"
+                    stroke="hsl(var(--chart-4))"
+                    strokeWidth={2}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="noShows"
+                    name="No-Shows"
+                    stroke="hsl(var(--chart-5))"
+                    strokeWidth={2}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Meeting Outcomes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={outcomesData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis type="number" className="text-xs" />
-                <YAxis dataKey="outcome" type="category" className="text-xs" width={150} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "0.5rem",
-                  }}
-                />
-                <Bar dataKey="count" name="Count" fill="hsl(var(--chart-2))" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+
+       <Card>
+      <CardHeader>
+        <CardTitle>Meeting Outcomes</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={outcomesData} layout="vertical">
+            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <XAxis type="number" className="text-xs" />
+            <YAxis dataKey="outcome" type="category" className="text-xs" width={150} />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "hsl(var(--card))",
+                border: "1px solid hsl(var(--border))",
+                borderRadius: "0.5rem",
+              }}
+            />
+            <Bar dataKey="count" name="Count" fill="hsl(var(--chart-2))" />
+          </BarChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
       </div>
 
       {/* Insights Table */}
@@ -179,13 +342,12 @@ export default function SchedulingMeetings() {
                     <td className="py-3 px-4 text-sm">{insight.trigger}</td>
                     <td className="py-3 px-4 text-center">
                       <span
-                        className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                          insight.sentiment === "positive"
-                            ? "bg-success/10 text-success"
-                            : insight.sentiment === "neutral"
+                        className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${insight.sentiment === "positive"
+                          ? "bg-success/10 text-success"
+                          : insight.sentiment === "neutral"
                             ? "bg-primary/10 text-primary"
                             : "bg-warning/10 text-warning"
-                        }`}
+                          }`}
                       >
                         {insight.sentiment}
                       </span>
