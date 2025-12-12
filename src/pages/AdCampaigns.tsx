@@ -27,12 +27,18 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { supabase } from "@/lib/supabase";
-import { AdStatus, AdVariation, CampaignData } from "@/types/ads";
+import { AdStatus, AdVariation, ApprovalStatus, CampaignData, LinkedInCampaign, LinkedInStatus } from "@/types/ads";
 import { AdApprovalTab } from "@/components/dashboard/adsPageComp/AdApprovalTab";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdDetailsModal } from "@/components/dashboard/adsPageComp/AdDetailsModal";
 import { CampaignCreationModal } from "@/components/dashboard/adsPageComp/CampaignCreationModal";
 import { CampaignsListTab } from "@/components/dashboard/adsPageComp/CampaignsListTab";
+import { LinkedInAdsTab } from "@/components/dashboard/adsPageComp/LinkedInAdsTab";
+import { AdPreviewModal } from "@/components/dashboard/adsPageComp/AdPreviewModal";
+
+
+import { useToast } from "@/components/ui/use-toast"; // Add this import
+import { Toaster } from "@/components/ui/toaster"; // Add this import
 
 const performanceTrendData = [
   { date: "Jan 1", spend: 2100, conversions: 34, roas: 3.2 },
@@ -109,14 +115,20 @@ async function getAdVariations(): Promise<AdVariation[]> {
 
 export default function AdCampaigns() {
   const [ads, setAds] = useState<AdVariation[]>([]);
+  const [linkedinCampaigns, setLinkedinCampaigns] = useState<LinkedInCampaign[]>([]);
   const [loading, setLoading] = useState(true);
+  const [linkedinLoading, setLinkedinLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [selectedAd, setSelectedAd] = useState<AdVariation | null>(null);
+  const [selectedCampaign, setSelectedCampaign] = useState<LinkedInCampaign | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
 
   const { user, loading: authLoading } = useAuth();
+  const { toast } = useToast(); // Add this
+
 
   const fetchAds = async () => {
     try {
@@ -130,13 +142,41 @@ export default function AdCampaigns() {
       setAds(data || []);
     } catch (error) {
       console.error("Error fetching ads:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch ads.",
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchLinkedInCampaigns = async () => {
+    try {
+      setLinkedinLoading(true);
+      const { data, error } = await supabase
+        .from("linkedin_ads_approval")
+        .select("*")
+        .order("submitted_at", { ascending: false });
+
+      if (error) throw error;
+      setLinkedinCampaigns(data || []);
+    } catch (error) {
+      console.error("Error fetching LinkedIn campaigns:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch LinkedIn campaigns.",
+      });
+    } finally {
+      setLinkedinLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchAds();
+    fetchLinkedInCampaigns();
   }, []);
 
   const handleStatusChange = async (
@@ -153,7 +193,6 @@ export default function AdCampaigns() {
         approved_at: status !== "pending" ? new Date().toISOString() : null,
       };
 
-      // Update in Supabase
       const { error } = await supabase
         .from("ad_variations")
         .update(updateData)
@@ -161,17 +200,178 @@ export default function AdCampaigns() {
 
       if (error) throw error;
 
-      // Update local state immediately
       setAds((prev) =>
         prev.map((ad) => (ad.id === id ? { ...ad, ...updateData } : ad))
       );
+
+      toast({
+        title: "Success",
+        description: `Ad ${status} successfully.`,
+      });
     } catch (error) {
       console.error("Error updating ad status:", error);
-      alert("Failed to update ad status. Please try again.");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update ad status.",
+      });
     } finally {
       setUpdatingId(null);
     }
   };
+
+  const handleLinkedInStatusChange = async (id: string, status: ApprovalStatus) => {
+    try {
+      setUpdatingId(id);
+
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+
+      console.log('data', { id, status, userId });
+
+      const updateData: any = {
+        approval_status: status,
+        user_id: userId,
+        ...(status === "APPROVED" && {
+          approved_at: new Date().toISOString(),
+          approved_by: userId,
+          linkedin_campaign_status: "ACTIVE" as LinkedInStatus,
+          automation_status: "PROCESSING"
+        }),
+        ...(status === "REJECTED" && {
+          linkedin_campaign_status: "CANCELLED" as LinkedInStatus,
+          automation_status: "FAILED"
+        }),
+        ...(status === "CANCELLED" && {
+          linkedin_campaign_status: "CANCELLED" as LinkedInStatus,
+          automation_status: "CANCELLED"
+        })
+      };
+
+      // Update the database
+      const { error } = await supabase
+        .from("linkedin_ads_approval")
+        .update(updateData)
+        .eq("id", id);
+
+      if (error) throw error;
+
+      // Update local state
+      setLinkedinCampaigns(prev =>
+        prev.map(campaign =>
+          campaign.id === id
+            ? {
+              ...campaign,
+              ...updateData,
+              approved_by: status === "APPROVED" ? user?.email || "Admin" : null,
+            }
+            : campaign
+        )
+      );
+
+      // Send webhook for APPROVED and CANCELLED statuses
+      if (status === "APPROVED" || status === "CANCELLED") {
+        try {
+          const webhookUrl = import.meta.env.VITE_N8N_LINKEDIN_ADS_WEBHOOK_URL;
+
+          if (!webhookUrl) {
+            console.warn("N8N webhook URL not configured");
+          } else {
+            const webhookData = {
+              event_type: status === "APPROVED" ? "LINKEDIN_CAMPAIGN_APPROVED" : "LINKEDIN_CAMPAIGN_CANCELLED",
+              campaign_id: id,
+              status: status,
+              timestamp: new Date().toISOString(),
+              user_id: userId,
+              user_email: user?.email
+            };
+
+            console.log('Sending webhook data:', webhookData);
+
+            // Send to n8n webhook (don't wait for response to keep UI responsive)
+            fetch(webhookUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(webhookData),
+            }).catch(webhookError => {
+              console.error('Webhook error (non-blocking):', webhookError);
+              // Don't show error to user since webhook is secondary
+            });
+          }
+        } catch (webhookError) {
+          console.error('Error preparing webhook:', webhookError);
+          // Don't throw - webhook failure shouldn't fail the main operation
+        }
+      }
+
+      toast({
+        title: "Success",
+        description: `Campaign ${status.toLowerCase()} successfully!`,
+      });
+    } catch (error) {
+      console.error("Error updating LinkedIn campaign status:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update campaign status.",
+      });
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleUpdateLinkedInCampaign = async (campaign: LinkedInCampaign) => {
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user?.id;
+
+    console.log('user id in the handle update linkedin cammpagin', userId)
+    try {
+      const { error } = await supabase
+        .from("linkedin_ads_approval")
+        .update({
+          user_id: userId,
+          objective: campaign.objective,
+          daily_budget: campaign.daily_budget,
+          total_budget: campaign.total_budget,
+          currency: campaign.currency,
+          start_date: campaign.start_date,
+          end_date: campaign.end_date,
+          target_location: campaign.target_location,
+          target_language: campaign.target_language,
+          updated_at: new Date().toISOString(),
+          campaign_activated_at: new Date().toISOString(),
+          ...(campaign.rejection_reason && {
+            rejection_reason: campaign.rejection_reason,
+            approval_status: "REJECTED"
+          })
+        })
+        .eq("id", campaign.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setLinkedinCampaigns(prev =>
+        prev.map(c => (c.id === campaign.id ? campaign : c))
+      );
+
+      toast({
+        title: "Success",
+        description: "Campaign updated successfully!",
+      });
+    } catch (error) {
+      console.error("Error updating campaign:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update campaign.",
+      });
+    }
+  };
+
+
+
 
   const handleViewDetails = (ad: AdVariation) => {
     setSelectedAd(ad);
@@ -181,6 +381,11 @@ export default function AdCampaigns() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedAd(null);
+  };
+
+  const handleViewCampaign = (campaign: LinkedInCampaign) => {
+    setSelectedCampaign(campaign);
+    setIsPreviewModalOpen(true);
   };
 
   const handleCampaignCreated = (campaign: CampaignData) => {
@@ -453,9 +658,13 @@ export default function AdCampaigns() {
             </TabsContent>
 
             <TabsContent value="linkedin">
-              <div className="text-center py-8 text-muted-foreground">
-                LinkedIn campaign details coming soon
-              </div>
+              <LinkedInAdsTab
+                campaigns={linkedinCampaigns}
+                loading={linkedinLoading}
+                onStatusChange={handleLinkedInStatusChange}
+                onEditCampaign={handleViewCampaign}
+                onUpdateCampaign={handleUpdateLinkedInCampaign}
+              />
             </TabsContent>
 
             <TabsContent value="optimization">
@@ -500,11 +709,19 @@ export default function AdCampaigns() {
         onClose={handleCloseModal}
       />
 
+      <AdPreviewModal
+        campaign={selectedCampaign}
+        isOpen={isPreviewModalOpen}
+        onClose={() => setIsPreviewModalOpen(false)}
+      />
+
       <CampaignCreationModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={handleCampaignCreated}
       />
+      <Toaster /> {/* Add this at the end */}
+
     </div>
   );
 }
