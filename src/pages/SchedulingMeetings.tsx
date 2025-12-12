@@ -16,18 +16,6 @@ import {
 } from "recharts";
 import { useQuery } from "@tanstack/react-query";
 
-
-const fetchMeetings = async () => {
-  const { data, error } = await supabase
-    .from('meetings')
-    .select('*')
-    .order('meeting_date', { ascending: false });
-console.log("data",data)
-  if (error) throw new Error(error.message);
-  return data;
-};
-;
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -59,24 +47,37 @@ type MeetingTrend = {
 
 
 
-const meetingTrendData = [
-  { date: "Jan 1", scheduled: 45, completed: 42, noShows: 3 },
-  { date: "Jan 8", scheduled: 52, completed: 48, noShows: 4 },
-  { date: "Jan 15", scheduled: 48, completed: 45, noShows: 3 },
-  { date: "Jan 22", scheduled: 61, completed: 56, noShows: 5 },
-  { date: "Jan 29", scheduled: 58, completed: 54, noShows: 4 },
-  { date: "Feb 5", scheduled: 64, completed: 60, noShows: 4 },
-];
 
 
 
- const [insightsData, setInsightsData] = useState([]);
+
+export default function SchedulingMeetings() {
+  // ✅ All useState hooks first
+  const [stats, setStats] = useState<MeetingStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState<boolean>(false);
+  const [errorStats, setErrorStats] = useState<string | null>(null);
+  const [meetingTrendData, setMeetingTrendData] = useState<MeetingTrend[]>([]);
+  const [loadingTrend, setLoadingTrend] = useState(true);
+  const [errorTrend, setErrorTrend] = useState<string | null>(null);
+  const [outcomesData, setOutcomesData] = useState([]);
+  const [insightsData, setInsightsData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchInsightsData();
-  }, []);
+  // ✅ useQuery hook BEFORE any conditional returns
+  const { data: meetingsData, isLoading: isMeetingsLoading, error: meetingsError } = useQuery({
+    queryKey: ['meetings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meetings")
+        .select("*")
+        .order("meeting_date", { ascending: false });
 
+      if (error) throw new Error(error.message);
+      return data;
+    },
+  });
+
+  // ✅ Define functions before useEffect
   const fetchInsightsData = async () => {
     try {
       const { data, error } = await supabase
@@ -88,35 +89,27 @@ const meetingTrendData = [
       setInsightsData(data || []);
     } catch (error) {
       console.error("Error fetching meeting insights:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
- 
+  const fetchOutcomesData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("meeting_outcomes")
+        .select("outcome, count")
+        .order("count", { ascending: false });
 
+      if (error) throw error;
+      setOutcomesData(data || []);
+    } catch (error) {
+      console.error("Error fetching meeting outcomes:", error);
+    }
+  };
 
-
-export default function SchedulingMeetings() {
-  const [stats, setStats] = useState<MeetingStats | null>(null);
-  const [loadingStats, setLoadingStats] = useState<boolean>(false);
-  const [errorStats, setErrorStats] = useState<string | null>(null);
-  const [meetingTrendData, setMeetingTrendData] = useState<MeetingTrend[]>([]);
-  const [loadingTrend, setLoadingTrend] = useState(true);
-  const [errorTrend, setErrorTrend] = useState<string | null>(null);
-    const [outcomesData, setOutcomesData] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchOutcomesData();
-  }, []);
-
-  // Fetch the latest row from Supabase
-
+  // ✅ All useEffect hooks
   useEffect(() => {
     const fetchMeetingStats = async () => {
       setLoadingStats(true);
-
       const { data, error } = await supabase
         .from("meeting_stats")
         .select("*")
@@ -130,12 +123,12 @@ export default function SchedulingMeetings() {
       } else {
         setStats(data);
       }
-
       setLoadingStats(false);
     };
 
     fetchMeetingStats();
   }, []);
+
   useEffect(() => {
     const fetchMeetingTrend = async () => {
       setLoadingTrend(true);
@@ -152,7 +145,6 @@ export default function SchedulingMeetings() {
         setLoadingTrend(false);
         return;
       }
-      console.log("data", data);
 
       const mapped = data.map((row: any) => ({
         id: row.id,
@@ -172,60 +164,32 @@ export default function SchedulingMeetings() {
     fetchMeetingTrend();
   }, []);
 
-  const fetchOutcomesData = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("meeting_outcomes")
-        .select("outcome, count")
-        .order("count", { ascending: false });
-
-      if (error) throw error;
-      setOutcomesData(data || []);
-    } catch (error) {
-      console.error("Error fetching meeting outcomes:", error);
-    } finally {
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      await Promise.all([fetchOutcomesData(), fetchInsightsData()]);
       setLoading(false);
-    }
-  };
+    };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+    fetchData();
+  }, []);
 
-
-  console.log("status", meetingTrendData);
-
-  const fetchMeetings = async () => {
-    const { data, error } = await supabase
-      .from("meetings")
-      .select("*")
-      .order("meeting_date", { ascending: false });
-  
-    if (error) throw new Error(error.message);
-    return data;
-  };
-
-  const { data: meetingsData, isLoading, error } = useQuery({
-    queryKey: ['meetings'],
-    queryFn: fetchMeetings,
-  });
-
-  if (isLoading) {
+  // ✅ NOW you can have conditional returns
+  if (loading || isMeetingsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Loading meetings...</p>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
 
-  if (error) {
+  if (meetingsError) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-destructive">Error: {error.message}</p>
+        <p className="text-destructive">Error: {meetingsError.message}</p>
       </div>
     );
   }
-console.log("meetingsData",meetingsData);
 
   return (
     <div className="space-y-6">
@@ -241,7 +205,7 @@ console.log("meetingsData",meetingsData);
         </Button>
       </div>
 
-     
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {loadingStats ? (
           <div className="col-span-4 text-muted-foreground">Loading stats…</div>
@@ -286,7 +250,7 @@ console.log("meetingsData",meetingsData);
         )}
       </div>
 
-     
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -339,31 +303,31 @@ console.log("meetingsData",meetingsData);
         </Card>
 
 
-       <Card>
-      <CardHeader>
-        <CardTitle>Meeting Outcomes</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={outcomesData} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis type="number" className="text-xs" />
-            <YAxis dataKey="outcome" type="category" className="text-xs" width={150} />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "hsl(var(--card))",
-                border: "1px solid hsl(var(--border))",
-                borderRadius: "0.5rem",
-              }}
-            />
-            <Bar dataKey="count" name="Count" fill="hsl(var(--chart-2))" />
-          </BarChart>
-        </ResponsiveContainer>
-      </CardContent>
-    </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Meeting Outcomes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={outcomesData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis type="number" className="text-xs" />
+                <YAxis dataKey="outcome" type="category" className="text-xs" width={150} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "0.5rem",
+                  }}
+                />
+                <Bar dataKey="count" name="Count" fill="hsl(var(--chart-2))" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       </div>
 
-   
+
       <Card>
         <CardHeader>
           <CardTitle>Recent Meeting Insights (Read.AI)</CardTitle>
@@ -395,7 +359,7 @@ console.log("meetingsData",meetingsData);
                   meetingsData.map((meeting, index) => {
                     // Get the first meeting summary (since it's a one-to-many relation)
                     const summary = meeting.meeting_summaries?.[0];
-                    
+
                     return (
                       <tr key={meeting.id || index} className="border-b border-border hover:bg-muted/50 transition-colors">
                         <td className="py-3 px-4 text-sm text-muted-foreground">
@@ -409,26 +373,24 @@ console.log("meetingsData",meetingsData);
                         <td className="py-3 px-4 text-sm">{meeting.duration_minutes} min</td>
                         <td className="py-3 px-4 text-center">
                           <span
-                            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                              summary?.overall_sentiment === "positive"
-                                ? "bg-success/10 text-success"
-                                : summary?.overall_sentiment === "neutral"
+                            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${summary?.overall_sentiment === "positive"
+                              ? "bg-success/10 text-success"
+                              : summary?.overall_sentiment === "neutral"
                                 ? "bg-primary/10 text-primary"
                                 : "bg-destructive/10 text-destructive"
-                            }`}
+                              }`}
                           >
                             {summary?.overall_sentiment || "N/A"}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-center">
                           <span
-                            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                              summary?.engagement_level === "high"
-                                ? "bg-success/10 text-success"
-                                : summary?.engagement_level === "medium"
+                            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${summary?.engagement_level === "high"
+                              ? "bg-success/10 text-success"
+                              : summary?.engagement_level === "medium"
                                 ? "bg-warning/10 text-warning"
                                 : "bg-muted text-muted-foreground"
-                            }`}
+                              }`}
                           >
                             {summary?.engagement_level || "N/A"}
                           </span>
@@ -438,9 +400,8 @@ console.log("meetingsData",meetingsData);
                             <div className="space-y-1">
                               {meeting.buying_triggers.map((trigger, i) => (
                                 <div key={i} className="flex items-center gap-1">
-                                  <span className={`w-2 h-2 rounded-full ${
-                                    trigger.priority === "high" ? "bg-destructive" : "bg-warning"
-                                  }`} />
+                                  <span className={`w-2 h-2 rounded-full ${trigger.priority === "high" ? "bg-destructive" : "bg-warning"
+                                    }`} />
                                   <span className="text-xs">{trigger.trigger_text}</span>
                                 </div>
                               ))}
@@ -454,9 +415,8 @@ console.log("meetingsData",meetingsData);
                             <div className="space-y-1">
                               {meeting.next_steps.slice(0, 2).map((step, i) => (
                                 <div key={i} className="flex items-center gap-1">
-                                  <span className={`w-2 h-2 rounded-full ${
-                                    step.status === "completed" ? "bg-success" : "bg-primary"
-                                  }`} />
+                                  <span className={`w-2 h-2 rounded-full ${step.status === "completed" ? "bg-success" : "bg-primary"
+                                    }`} />
                                   <span className="text-xs">{step.step_description}</span>
                                 </div>
                               ))}
