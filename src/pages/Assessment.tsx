@@ -50,9 +50,10 @@ const Assessment: React.FC = () => {
     email: "",
     phone: "",
     jobTitle: "",
-    companyName: "",
+    companyWebsite: "",
     companySize: "",
     requestAsset: "",
+
   });
 
   useEffect(() => {
@@ -93,32 +94,32 @@ const Assessment: React.FC = () => {
               : [],
             credibility_section: data.credibility_title
               ? {
-                  title: data.credibility_title,
-                  points: Array.isArray(data.credibility_points)
-                    ? data.credibility_points
-                    : [],
-                  background_image_url: data.credibility_background_image_url,
-                  background_image_alt_text:
-                    data.credibility_background_image_alt_text,
-                }
+                title: data.credibility_title,
+                points: Array.isArray(data.credibility_points)
+                  ? data.credibility_points
+                  : [],
+                background_image_url: data.credibility_background_image_url,
+                background_image_alt_text:
+                  data.credibility_background_image_alt_text,
+              }
               : undefined,
             process_section: data.process_title
               ? {
-                  title: data.process_title,
-                  steps: Array.isArray(data.process_steps)
-                    ? data.process_steps
-                    : [],
-                  diagram_image_url: data.process_diagram_image_url,
-                  diagram_image_alt_text: data.process_diagram_image_alt_text,
-                }
+                title: data.process_title,
+                steps: Array.isArray(data.process_steps)
+                  ? data.process_steps
+                  : [],
+                diagram_image_url: data.process_diagram_image_url,
+                diagram_image_alt_text: data.process_diagram_image_alt_text,
+              }
               : undefined,
             cta_section: data.cta_headline
               ? {
-                  headline: data.cta_headline,
-                  cta_button: data.cta_button_text,
-                  background_image_url: data.cta_background_image_url,
-                  background_image_alt_text: data.cta_background_image_alt_text,
-                }
+                headline: data.cta_headline,
+                cta_button: data.cta_button_text,
+                background_image_url: data.cta_background_image_url,
+                background_image_alt_text: data.cta_background_image_alt_text,
+              }
               : undefined,
           },
         };
@@ -184,7 +185,7 @@ const Assessment: React.FC = () => {
         email: "",
         phone: "",
         jobTitle: "",
-        companyName: "",
+        companyWebsite: "",
         companySize: "",
         requestAsset: "",
       });
@@ -447,8 +448,8 @@ const Assessment: React.FC = () => {
                       </div>
                       {index <
                         landing_page.process_section.steps.length - 1 && (
-                        <div className="hidden lg:block absolute top-1/2 -right-4 w-8 h-0.5 bg-gradient-to-r from-blue-500 to-transparent"></div>
-                      )}
+                          <div className="hidden lg:block absolute top-1/2 -right-4 w-8 h-0.5 bg-gradient-to-r from-blue-500 to-transparent"></div>
+                        )}
                     </div>
                   </div>
                 ))}
@@ -585,20 +586,20 @@ const Assessment: React.FC = () => {
 
                 <div className="group">
                   <label
-                    htmlFor="companyName"
+                    htmlFor="companyWebsite"
                     className="block mb-2 font-semibold text-gray-700 group-focus-within:text-blue-600 transition-colors"
                   >
-                    Company Name *
+                    Company Website *
                   </label>
                   <input
                     type="text"
-                    id="companyName"
-                    name="companyName"
-                    value={formData.companyName}
+                    id="companyWebsite"
+                    name="companyWebsite"
+                    value={formData.companyWebsite}
                     onChange={handleInputChange}
                     required
                     className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-gray-300"
-                    placeholder="ABC Medical Center"
+                    placeholder="www.practice.com"
                   />
                 </div>
 

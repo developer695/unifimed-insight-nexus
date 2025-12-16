@@ -1,70 +1,98 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { Activity, AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle, Clock, Loader2, RefreshCw } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase";
 
-const executionTrendData = [
-  { time: "00:00", executions: 45, success: 43, failures: 2 },
-  { time: "04:00", executions: 38, success: 37, failures: 1 },
-  { time: "08:00", executions: 67, success: 64, failures: 3 },
-  { time: "12:00", executions: 89, success: 85, failures: 4 },
-  { time: "16:00", executions: 102, success: 98, failures: 4 },
-  { time: "20:00", executions: 78, success: 76, failures: 2 },
-];
+// Types
+interface SystemHealthStats {
+  id: string;
+  total_executions: number;
+  total_executions_change: number;
+  success_rate: number;
+  success_rate_change: number;
+  avg_execution_time: number;
+  avg_execution_time_change: number;
+  active_agents: number;
+  total_agents: number;
+  warning_agents: number;
+  period_start: string;
+  period_end: string;
+  created_at: string;
+  updated_at: string;
+}
 
-const errorsByAgentData = [
-  { agent: "Voice Engine", errors: 3, rate: 2.1 },
-  { agent: "Contact Intel", errors: 5, rate: 1.8 },
-  { agent: "Outreach", errors: 8, rate: 3.2 },
-  { agent: "Scheduling", errors: 2, rate: 1.2 },
-  { agent: "SEO Keywords", errors: 1, rate: 0.5 },
-  { agent: "Content Engine", errors: 4, rate: 2.5 },
-  { agent: "Ad Campaigns", errors: 6, rate: 2.8 },
-  { agent: "Analytics", errors: 2, rate: 1.0 },
-];
+interface ExecutionTrend {
+  id: string;
+  time: string;
+  executions: number;
+  success: number;
+  failures: number;
+  timestamp: string;
+  created_at: string;
+}
 
-const agentHealthData = [
-  { name: "Voice Engine", status: "operational", lastRun: "2 min ago", successRate: 97.9, avgTime: "2.3s" },
-  { name: "Contact Intelligence", status: "operational", lastRun: "1 min ago", successRate: 98.2, avgTime: "4.1s" },
-  { name: "Outreach", status: "warning", lastRun: "5 min ago", successRate: 96.8, avgTime: "3.7s" },
-  { name: "Scheduling & Meetings", status: "operational", lastRun: "3 min ago", successRate: 98.8, avgTime: "1.9s" },
-  { name: "SEO Keywords", status: "operational", lastRun: "10 min ago", successRate: 99.5, avgTime: "5.2s" },
-  { name: "Content Engine", status: "operational", lastRun: "4 min ago", successRate: 97.5, avgTime: "3.4s" },
-  { name: "Ad Campaigns", status: "operational", lastRun: "2 min ago", successRate: 97.2, avgTime: "2.8s" },
-  { name: "Analytics & Reporting", status: "operational", lastRun: "15 min ago", successRate: 99.0, avgTime: "6.1s" },
-  { name: "Meeting Insights", status: "operational", lastRun: "8 min ago", successRate: 98.5, avgTime: "4.5s" },
-  { name: "Compliance", status: "operational", lastRun: "6 min ago", successRate: 99.2, avgTime: "2.1s" },
-  { name: "Website Traffic", status: "operational", lastRun: "1 min ago", successRate: 99.8, avgTime: "1.2s" },
-  { name: "Landing Pages", status: "operational", lastRun: "5 min ago", successRate: 98.3, avgTime: "3.9s" },
-  { name: "Forms & Lead Magnets", status: "operational", lastRun: "3 min ago", successRate: 99.1, avgTime: "2.5s" },
-  { name: "Behavioral Scoring", status: "operational", lastRun: "2 min ago", successRate: 98.7, avgTime: "3.1s" },
-  { name: "Conversion Feedback", status: "warning", lastRun: "12 min ago", successRate: 96.5, avgTime: "4.8s" },
-  { name: "Newsletter", status: "operational", lastRun: "20 min ago", successRate: 99.4, avgTime: "5.7s" },
-  { name: "System Orchestrator", status: "operational", lastRun: "1 min ago", successRate: 99.9, avgTime: "0.8s" },
-];
+interface AgentHealth {
+  id: string;
+  agent_name: string;
+  status: string;
+  last_run: string;
+  last_run_relative: string;
+  success_rate: number;
+  avg_time: number;
+  created_at: string;
+  updated_at: string;
+}
 
-const recentExecutionsData = [
-  { time: "14:32:18", agent: "Contact Intelligence", status: "success", duration: "4.2s", details: "Processed 23 contacts" },
-  { time: "14:31:45", agent: "Website Traffic", status: "success", duration: "1.1s", details: "Updated 142 visitors" },
-  { time: "14:31:12", agent: "Behavioral Scoring", status: "success", duration: "3.0s", details: "Scored 45 contacts" },
-  { time: "14:30:58", agent: "Voice Engine", status: "success", duration: "2.1s", details: "Generated 3 content pieces" },
-  { time: "14:30:22", agent: "Outreach", status: "failed", duration: "5.3s", details: "API rate limit exceeded" },
-  { time: "14:29:47", agent: "Ad Campaigns", status: "success", duration: "2.9s", details: "Updated 12 campaigns" },
-  { time: "14:29:15", agent: "Forms & Lead Magnets", status: "success", duration: "2.4s", details: "Processed 8 submissions" },
-  { time: "14:28:33", agent: "Scheduling & Meetings", status: "success", duration: "1.8s", details: "Synced 5 meetings" },
-];
+interface AgentError {
+  id: string;
+  agent_id: string;
+  agent_name: string;
+  errors_count: number;
+  error_rate: number;
+  date: string;
+  created_at: string;
+}
 
-const apiHealthData = [
-  { service: "HubSpot", status: "operational", latency: 245, callsToday: 2847, rateLimit: 45 },
-  { service: "Smartlead", status: "operational", latency: 189, callsToday: 1523, rateLimit: 62 },
-  { service: "Heyreach", status: "operational", latency: 312, callsToday: 876, rateLimit: 38 },
-  { service: "Google Ads", status: "operational", latency: 421, callsToday: 654, rateLimit: 71 },
-  { service: "ChatGPT API", status: "warning", latency: 1823, callsToday: 3214, rateLimit: 87 },
-  { service: "Canva", status: "operational", latency: 567, callsToday: 234, rateLimit: 23 },
-  { service: "ContentStudio", status: "operational", latency: 398, callsToday: 487, rateLimit: 41 },
-  { service: "Read.AI", status: "operational", latency: 678, callsToday: 156, rateLimit: 34 },
-];
+interface RecentExecution {
+  id: string;
+  agent_name: string;
+  status: string;
+  duration: number;
+  details: string | null;
+  executed_at: string;
+  created_at: string;
+}
+
+interface APIHealth {
+  id: string;
+  service_name: string;
+  status: string;
+  latency: number;
+  calls_today: number;
+  rate_limit_used: number;
+  updated_at: string;
+  created_at: string;
+}
+
+interface SystemMetrics {
+  id: string;
+  workflow_queue: number;
+  avg_wait_time: number;
+  cpu_usage: number;
+  memory_usage: number;
+  storage_usage: number;
+  uptime_percentage: number;
+  downtime_minutes: number;
+  period_days: number;
+  timestamp: string;
+  created_at: string;
+}
 
 const getStatusBadge = (status: string) => {
   const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", color: string }> = {
@@ -85,50 +113,193 @@ const getStatusBadge = (status: string) => {
 };
 
 export default function SystemHealth() {
-  const totalExecutions = 1547;
-  const successRate = 98.2;
-  const avgExecutionTime = 3.4;
-  const activeAgents = agentHealthData.filter(a => a.status === "operational").length;
+  const [stats, setStats] = useState<SystemHealthStats | null>(null);
+  const [executionTrendData, setExecutionTrendData] = useState<ExecutionTrend[]>([]);
+  const [agentHealthData, setAgentHealthData] = useState<AgentHealth[]>([]);
+  const [errorsByAgentData, setErrorsByAgentData] = useState<AgentError[]>([]);
+  const [recentExecutionsData, setRecentExecutionsData] = useState<RecentExecution[]>([]);
+  const [apiHealthData, setApiHealthData] = useState<APIHealth[]>([]);
+  const [systemMetrics, setSystemMetrics] = useState<SystemMetrics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (!supabase) {
+        throw new Error('Supabase client not initialized.');
+      }
+
+      // Fetch system health stats
+      const { data: statsData, error: statsError } = await supabase
+        .from('system_health_stats')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (statsError) throw statsError;
+      setStats(statsData);
+
+      // Fetch execution trends
+      const { data: trendsData, error: trendsError } = await supabase
+        .from('execution_trends')
+        .select('*')
+        .order('timestamp', { ascending: true });
+
+      if (trendsError) throw trendsError;
+      setExecutionTrendData(trendsData || []);
+
+      // Fetch agent health
+      const { data: agentData, error: agentError } = await supabase
+        .from('agent_health')
+        .select('*')
+        .order('agent_name', { ascending: true });
+
+      if (agentError) throw agentError;
+      setAgentHealthData(agentData || []);
+
+      // Fetch agent errors
+      const { data: errorsData, error: errorsError } = await supabase
+        .from('agent_errors')
+        .select('*')
+        .eq('date', new Date().toISOString().split('T')[0])
+        .order('error_rate', { ascending: false });
+
+      if (errorsError) throw errorsError;
+      setErrorsByAgentData(errorsData || []);
+
+      // Fetch recent executions
+      const { data: executionsData, error: executionsError } = await supabase
+        .from('recent_executions')
+        .select('*')
+        .order('executed_at', { ascending: false })
+        .limit(20);
+
+      if (executionsError) throw executionsError;
+      setRecentExecutionsData(executionsData || []);
+
+      // Fetch API health
+      const { data: apiData, error: apiError } = await supabase
+        .from('api_health')
+        .select('*')
+        .order('service_name', { ascending: true });
+
+      if (apiError) throw apiError;
+      setApiHealthData(apiData || []);
+
+      // Fetch system metrics
+      const { data: metricsData, error: metricsError } = await supabase
+        .from('system_metrics')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (metricsError) throw metricsError;
+      setSystemMetrics(metricsData);
+
+    } catch (err) {
+      console.error('Error fetching system health data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load system health data.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+  };
+
+  const formatDuration = (duration: number) => {
+    return `${duration.toFixed(1)}s`;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+          <p className="mt-2 text-muted-foreground">Loading system health data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+        <div className="text-center">
+          <p className="text-destructive mb-4">{error}</p>
+          <Button onClick={fetchData}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">System Health Monitor</h1>
-        <p className="text-muted-foreground mt-2">
-          Real-time monitoring of workflow executions, agent status, and API health
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">System Health Monitor</h1>
+          <p className="text-muted-foreground mt-2">
+            Real-time monitoring of workflow executions, agent status, and API health
+          </p>
+        </div>
+        <Button onClick={fetchData} variant="outline">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total Executions (24h)"
-          value={totalExecutions.toLocaleString()}
-          change={8.5}
-          changeLabel="from yesterday"
-          icon={<Activity className="h-4 w-4" />}
-        />
-        <StatCard
-          title="Success Rate"
-          value={`${successRate}%`}
-          change={0.3}
-          changeLabel="from yesterday"
-          icon={<CheckCircle className="h-4 w-4" />}
-        />
-        <StatCard
-          title="Avg Execution Time"
-          value={`${avgExecutionTime}s`}
-          change={-5.2}
-          changeLabel="improvement"
-          icon={<Clock className="h-4 w-4" />}
-        />
-        <StatCard
-          title="Active Agents"
-          value={`${activeAgents}/17`}
-          subtitle={`${17 - activeAgents} warning`}
-          icon={<Activity className="h-4 w-4" />}
-        />
-      </div>
+      {/* KPI Cards */}
+      {stats && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Total Executions (24h)"
+            value={stats.total_executions.toLocaleString()}
+            change={stats.total_executions_change}
+            changeLabel="from yesterday"
+            icon={<Activity className="h-4 w-4" />}
+          />
+          <StatCard
+            title="Success Rate"
+            value={`${stats.success_rate}%`}
+            change={stats.success_rate_change}
+            changeLabel="from yesterday"
+            icon={<CheckCircle className="h-4 w-4" />}
+          />
+          <StatCard
+            title="Avg Execution Time"
+            value={`${stats.avg_execution_time}s`}
+            change={stats.avg_execution_time_change}
+            changeLabel="improvement"
+            icon={<Clock className="h-4 w-4" />}
+          />
+          <StatCard
+            title="Active Agents"
+            value={`${stats.active_agents}/${stats.total_agents}`}
+            subtitle={`${stats.warning_agents} warning`}
+            icon={<Activity className="h-4 w-4" />}
+          />
+        </div>
+      )}
 
+      {/* Charts */}
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -158,16 +329,17 @@ export default function SystemHealth() {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={errorsByAgentData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="agent" angle={-45} textAnchor="end" height={100} />
+                <XAxis dataKey="agent_name" angle={-45} textAnchor="end" height={100} />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="rate" fill="hsl(var(--chart-3))" name="Error Rate %" />
+                <Bar dataKey="error_rate" fill="hsl(var(--chart-3))" name="Error Rate %" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
+      {/* Agent Health Status Table */}
       <Card>
         <CardHeader>
           <CardTitle>Agent Health Status</CardTitle>
@@ -185,21 +357,30 @@ export default function SystemHealth() {
                 </tr>
               </thead>
               <tbody>
-                {agentHealthData.map((agent, index) => (
-                  <tr key={index} className="border-b hover:bg-muted/50">
-                    <td className="p-2 font-medium">{agent.name}</td>
-                    <td className="p-2 text-center">{getStatusBadge(agent.status)}</td>
-                    <td className="text-right p-2 text-muted-foreground">{agent.lastRun}</td>
-                    <td className="text-right p-2">{agent.successRate}%</td>
-                    <td className="text-right p-2">{agent.avgTime}</td>
+                {agentHealthData.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                      No agent health data available
+                    </td>
                   </tr>
-                ))}
+                ) : (
+                  agentHealthData.map((agent) => (
+                    <tr key={agent.id} className="border-b hover:bg-muted/50">
+                      <td className="p-2 font-medium">{agent.agent_name}</td>
+                      <td className="p-2 text-center">{getStatusBadge(agent.status)}</td>
+                      <td className="text-right p-2 text-muted-foreground">{agent.last_run_relative}</td>
+                      <td className="text-right p-2">{agent.success_rate}%</td>
+                      <td className="text-right p-2">{agent.avg_time}s</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </CardContent>
       </Card>
 
+      {/* Recent Executions Table */}
       <Card>
         <CardHeader>
           <CardTitle>Recent Executions</CardTitle>
@@ -217,21 +398,30 @@ export default function SystemHealth() {
                 </tr>
               </thead>
               <tbody>
-                {recentExecutionsData.map((exec, index) => (
-                  <tr key={index} className="border-b hover:bg-muted/50">
-                    <td className="p-2 text-muted-foreground">{exec.time}</td>
-                    <td className="p-2">{exec.agent}</td>
-                    <td className="p-2 text-center">{getStatusBadge(exec.status)}</td>
-                    <td className="text-right p-2">{exec.duration}</td>
-                    <td className="p-2 text-sm text-muted-foreground">{exec.details}</td>
+                {recentExecutionsData.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                      No recent executions
+                    </td>
                   </tr>
-                ))}
+                ) : (
+                  recentExecutionsData.map((exec) => (
+                    <tr key={exec.id} className="border-b hover:bg-muted/50">
+                      <td className="p-2 text-muted-foreground">{formatTime(exec.executed_at)}</td>
+                      <td className="p-2">{exec.agent_name}</td>
+                      <td className="p-2 text-center">{getStatusBadge(exec.status)}</td>
+                      <td className="text-right p-2">{formatDuration(exec.duration)}</td>
+                      <td className="p-2 text-sm text-muted-foreground">{exec.details || '-'}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </CardContent>
       </Card>
 
+      {/* API Health Status Table */}
       <Card>
         <CardHeader>
           <CardTitle>API Health Status</CardTitle>
@@ -249,70 +439,81 @@ export default function SystemHealth() {
                 </tr>
               </thead>
               <tbody>
-                {apiHealthData.map((api, index) => (
-                  <tr key={index} className="border-b hover:bg-muted/50">
-                    <td className="p-2 font-medium">{api.service}</td>
-                    <td className="p-2 text-center">{getStatusBadge(api.status)}</td>
-                    <td className="text-right p-2">{api.latency}ms</td>
-                    <td className="text-right p-2">{api.callsToday.toLocaleString()}</td>
-                    <td className="text-right p-2">
-                      <span className={api.rateLimit > 80 ? "text-warning font-semibold" : ""}>
-                        {api.rateLimit}%
-                      </span>
+                {apiHealthData.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                      No API health data available
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  apiHealthData.map((api) => (
+                    <tr key={api.id} className="border-b hover:bg-muted/50">
+                      <td className="p-2 font-medium">{api.service_name}</td>
+                      <td className="p-2 text-center">{getStatusBadge(api.status)}</td>
+                      <td className="text-right p-2">{api.latency}ms</td>
+                      <td className="text-right p-2">{api.calls_today.toLocaleString()}</td>
+                      <td className="text-right p-2">
+                        <span className={api.rate_limit_used > 80 ? "text-warning font-semibold" : ""}>
+                          {api.rate_limit_used}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Workflow Queue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold">12</div>
-            <p className="text-sm text-muted-foreground mt-2">Tasks pending execution</p>
-            <p className="text-sm text-muted-foreground mt-1">Avg wait time: 0.8s</p>
-          </CardContent>
-        </Card>
+      {/* System Metrics Cards */}
+      {systemMetrics && (
+        <div className="grid gap-6 md:grid-cols-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>Workflow Queue</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold">{systemMetrics.workflow_queue}</div>
+              <p className="text-sm text-muted-foreground mt-2">Tasks pending execution</p>
+              <p className="text-sm text-muted-foreground mt-1">Avg wait time: {systemMetrics.avg_wait_time}s</p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Resource Usage</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">CPU</span>
-                <span className="text-sm font-semibold">42%</span>
+          <Card>
+            <CardHeader>
+              <CardTitle>Resource Usage</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">CPU</span>
+                  <span className="text-sm font-semibold">{systemMetrics.cpu_usage}%</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Memory</span>
+                  <span className="text-sm font-semibold">{systemMetrics.memory_usage}%</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Storage</span>
+                  <span className="text-sm font-semibold">{systemMetrics.storage_usage}%</span>
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Memory</span>
-                <span className="text-sm font-semibold">68%</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Storage</span>
-                <span className="text-sm font-semibold">54%</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>System Uptime</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold">99.97%</div>
-            <p className="text-sm text-muted-foreground mt-2">Last 30 days</p>
-            <p className="text-sm text-success mt-1">13 minutes downtime</p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>System Uptime</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold">{systemMetrics.uptime_percentage}%</div>
+              <p className="text-sm text-muted-foreground mt-2">Last {systemMetrics.period_days} days</p>
+              <p className="text-sm text-success mt-1">{systemMetrics.downtime_minutes} minutes downtime</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

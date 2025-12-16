@@ -27,7 +27,14 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { supabase } from "@/lib/supabase";
-import { AdStatus, AdVariation, ApprovalStatus, CampaignData, LinkedInCampaign, LinkedInStatus } from "@/types/ads";
+import { 
+  AdStatus, 
+  AdVariation, 
+  ApprovalStatus, 
+  CampaignData, 
+  LinkedInCampaign, 
+  LinkedInStatus 
+} from "@/types/ads";
 import { AdApprovalTab } from "@/components/dashboard/adsPageComp/AdApprovalTab";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdDetailsModal } from "@/components/dashboard/adsPageComp/AdDetailsModal";
@@ -38,70 +45,61 @@ import { AdPreviewModal } from "@/components/dashboard/adsPageComp/AdPreviewModa
 import { useToast } from "@/components/ui/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 
-const performanceTrendData = [
-  { date: "Jan 1", spend: 2100, conversions: 34, roas: 3.2 },
-  { date: "Jan 8", spend: 2400, conversions: 41, roas: 3.5 },
-  { date: "Jan 15", spend: 2200, conversions: 38, roas: 3.4 },
-  { date: "Jan 22", spend: 2600, conversions: 48, roas: 3.8 },
-  { date: "Jan 29", spend: 2500, conversions: 45, roas: 3.7 },
-  { date: "Feb 5", spend: 2800, conversions: 52, roas: 4.1 },
-];
+// Types for new dynamic data
+interface AdCampaignsStats {
+  id: string;
+  total_ad_spend: number;
+  total_ad_spend_change: number;
+  total_conversions: number;
+  total_conversions_change: number;
+  avg_roas: number;
+  avg_roas_change: number;
+  revenue_generated: number;
+  avg_cost_per_conversion: number;
+  avg_cost_per_conversion_change: number;
+  period_start: string;
+  period_end: string;
+  created_at: string;
+  updated_at: string;
+}
 
-const platformComparisonData = [
-  {
-    platform: "Google Ads",
-    spend: 15400,
-    clicks: 4234,
-    conversions: 267,
-    cpc: 3.64,
-    roas: 3.8,
-  },
-  {
-    platform: "LinkedIn Ads",
-    spend: 8900,
-    clicks: 1876,
-    conversions: 178,
-    cpc: 4.74,
-    roas: 4.2,
-  },
-];
+interface AdPerformanceTrend {
+  id: string;
+  date: string;
+  spend: number;
+  conversions: number;
+  roas: number;
+  created_at: string;
+  updated_at: string;
+}
 
-const googleCampaignsData = [
-  {
-    name: "Healthcare IT Solutions - Search",
-    spend: 5200,
-    impressions: 124000,
-    ctr: 4.2,
-    conversions: 89,
-    cpa: 58.43,
-  },
-  {
-    name: "HIPAA Compliance Guide - Display",
-    spend: 3800,
-    impressions: 456000,
-    ctr: 1.8,
-    conversions: 67,
-    cpa: 56.72,
-  },
-  {
-    name: "Hospital Cost Reduction - Retargeting",
-    spend: 2900,
-    impressions: 89000,
-    ctr: 3.9,
-    conversions: 54,
-    cpa: 53.7,
-  },
-  {
-    name: "Medical Device Security - Search",
-    spend: 3500,
-    impressions: 98000,
-    ctr: 4.5,
-    conversions: 57,
-    cpa: 61.4,
-  },
-];
+interface AdPlatformComparison {
+  id: string;
+  platform: string;
+  spend: number;
+  clicks: number;
+  conversions: number;
+  cpc: number;
+  roas: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface GoogleCampaign {
+  id: string;
+  name: string;
+  spend: number;
+  impressions: number;
+  ctr: number;
+  conversions: number;
+  cpa: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export default function AdCampaigns() {
+  // Existing states
   const [ads, setAds] = useState<AdVariation[]>([]);
   const [linkedinCampaigns, setLinkedinCampaigns] = useState<LinkedInCampaign[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,6 +111,13 @@ export default function AdCampaigns() {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
+
+  // New states for dynamic data
+  const [campaignStats, setCampaignStats] = useState<AdCampaignsStats | null>(null);
+  const [performanceTrendData, setPerformanceTrendData] = useState<AdPerformanceTrend[]>([]);
+  const [platformComparisonData, setPlatformComparisonData] = useState<AdPlatformComparison[]>([]);
+  const [googleCampaignsData, setGoogleCampaignsData] = useState<GoogleCampaign[]>([]);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -161,9 +166,68 @@ export default function AdCampaigns() {
     }
   };
 
+  const fetchCampaignStats = async () => {
+    try {
+      setStatsLoading(true);
+
+      if (!supabase) {
+        throw new Error('Supabase client not initialized.');
+      }
+
+      // Fetch campaign stats
+      const { data: statsData, error: statsError } = await supabase
+        .from('ad_campaigns_stats')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (statsError) throw statsError;
+      setCampaignStats(statsData);
+
+      // Fetch performance trends
+      const { data: trendsData, error: trendsError } = await supabase
+        .from('ad_performance_trends')
+        .select('*')
+        .order('date', { ascending: true });
+
+      if (trendsError) throw trendsError;
+      setPerformanceTrendData(trendsData || []);
+
+      // Fetch platform comparison
+      const { data: platformData, error: platformError } = await supabase
+        .from('ad_platform_comparison')
+        .select('*')
+        .order('spend', { ascending: false });
+
+      if (platformError) throw platformError;
+      setPlatformComparisonData(platformData || []);
+
+      // Fetch Google campaigns
+      const { data: googleData, error: googleError } = await supabase
+        .from('google_campaigns')
+        .select('*')
+        .order('spend', { ascending: false });
+
+      if (googleError) throw googleError;
+      setGoogleCampaignsData(googleData || []);
+
+    } catch (error) {
+      console.error('Error fetching campaign stats:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch campaign statistics.",
+      });
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchAds();
     fetchLinkedInCampaigns();
+    fetchCampaignStats();
   }, []);
 
   const handleStatusChange = async (
@@ -207,7 +271,6 @@ export default function AdCampaigns() {
     }
   };
 
-  // Send webhook to n8n for campaign actions
   const sendCampaignWebhook = async (eventType: string, campaignId: string, additionalData?: any) => {
     try {
       const webhookUrl = import.meta.env.VITE_N8N_LINKEDIN_ADS_WEBHOOK_URL;
@@ -230,7 +293,6 @@ export default function AdCampaigns() {
 
       console.log('Sending webhook:', webhookData);
 
-      // Non-blocking webhook call
       fetch(webhookUrl, {
         method: 'POST',
         headers: {
@@ -290,7 +352,6 @@ export default function AdCampaigns() {
         )
       );
 
-      // Send webhook for status changes
       if (status === "APPROVED") {
         await sendCampaignWebhook("LINKEDIN_CAMPAIGN_APPROVED", id, { status });
       } else if (status === "CANCELLED") {
@@ -340,7 +401,6 @@ export default function AdCampaigns() {
         )
       );
 
-      // Send webhook for pause action
       await sendCampaignWebhook("LINKEDIN_CAMPAIGN_PAUSED", id, {
         action: "PAUSE",
         linkedin_campaign_status: "PAUSED"
@@ -371,7 +431,7 @@ export default function AdCampaigns() {
 
       const updateData = {
         linkedin_campaign_status: "ACTIVE" as LinkedInStatus,
-        automation_status: "ACTIVE", // ✅ FIXED!
+        automation_status: "ACTIVE",
         user_id: userId,
         updated_at: new Date().toISOString()
       };
@@ -392,7 +452,7 @@ export default function AdCampaigns() {
       await sendCampaignWebhook("LINKEDIN_CAMPAIGN_RESUMED", id, {
         action: "RESUME",
         linkedin_campaign_status: "ACTIVE",
-        automation_status: "ACTIVE" // Also update webhook payload
+        automation_status: "ACTIVE"
       });
 
       toast({
@@ -439,7 +499,6 @@ export default function AdCampaigns() {
         )
       );
 
-      // Send webhook for cancel action
       await sendCampaignWebhook("LINKEDIN_CAMPAIGN_CANCELLED", id, {
         action: "CANCEL",
         approval_status: "CANCELLED",
@@ -524,10 +583,20 @@ export default function AdCampaigns() {
 
   const handleCampaignCreated = (campaign: CampaignData) => {
     setCampaigns((prev) => [campaign, ...prev]);
-    alert("Campaign created successfully!");
+    toast({
+      title: "Success",
+      description: "Campaign created successfully!",
+    });
   };
 
-  if (authLoading) {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  if (authLoading || statsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -575,36 +644,38 @@ export default function AdCampaigns() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Ad Spend"
-          value="$24.3K"
-          change={12.5}
-          icon={<DollarSign className="h-5 w-5" />}
-          subtitle="Last 30 days"
-        />
-        <StatCard
-          title="Total Conversions"
-          value="445"
-          change={18.7}
-          icon={<Target className="h-5 w-5" />}
-          subtitle="Across all campaigns"
-        />
-        <StatCard
-          title="Avg ROAS"
-          value="3.9x"
-          change={8.3}
-          icon={<TrendingUp className="h-5 w-5" />}
-          subtitle="$94.8K revenue"
-        />
-        <StatCard
-          title="Avg Cost/Conv"
-          value="$54.61"
-          change={-4.2}
-          icon={<MousePointerClick className="h-5 w-5" />}
-          subtitle="Improving efficiency"
-        />
-      </div>
+      {campaignStats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="Total Ad Spend"
+            value={`$${(campaignStats.total_ad_spend / 1000).toFixed(1)}K`}
+            change={campaignStats.total_ad_spend_change}
+            icon={<DollarSign className="h-5 w-5" />}
+            subtitle="Last 30 days"
+          />
+          <StatCard
+            title="Total Conversions"
+            value={campaignStats.total_conversions.toLocaleString()}
+            change={campaignStats.total_conversions_change}
+            icon={<Target className="h-5 w-5" />}
+            subtitle="Across all campaigns"
+          />
+          <StatCard
+            title="Avg ROAS"
+            value={`${campaignStats.avg_roas}x`}
+            change={campaignStats.avg_roas_change}
+            icon={<TrendingUp className="h-5 w-5" />}
+            subtitle={`$${(campaignStats.revenue_generated / 1000).toFixed(1)}K revenue`}
+          />
+          <StatCard
+            title="Avg Cost/Conv"
+            value={`$${campaignStats.avg_cost_per_conversion.toFixed(2)}`}
+            change={campaignStats.avg_cost_per_conversion_change}
+            icon={<MousePointerClick className="h-5 w-5" />}
+            subtitle="Improving efficiency"
+          />
+        </div>
+      )}
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -614,7 +685,10 @@ export default function AdCampaigns() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={performanceTrendData}>
+              <LineChart data={performanceTrendData.map(item => ({
+                ...item,
+                date: formatDate(item.date)
+              }))}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="date" className="text-xs" />
                 <YAxis yAxisId="left" className="text-xs" />
@@ -733,59 +807,87 @@ export default function AdCampaigns() {
             </TabsContent>
 
             <TabsContent value="google">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
-                        Campaign Name
-                      </th>
-                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">
-                        Spend
-                      </th>
-                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">
-                        Impressions
-                      </th>
-                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">
-                        CTR %
-                      </th>
-                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">
-                        Conversions
-                      </th>
-                      <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">
-                        CPA
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {googleCampaignsData.map((campaign, index) => (
-                      <tr
-                        key={index}
-                        className="border-b border-border hover:bg-muted/50 transition-colors"
-                      >
-                        <td className="py-3 px-4 font-medium">
-                          {campaign.name}
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          ${campaign.spend.toLocaleString()}
-                        </td>
-                        <td className="py-3 px-4 text-right text-muted-foreground">
-                          {campaign.impressions.toLocaleString()}
-                        </td>
-                        <td className="py-3 px-4 text-right font-semibold text-primary">
-                          {campaign.ctr}%
-                        </td>
-                        <td className="py-3 px-4 text-right font-semibold">
-                          {campaign.conversions}
-                        </td>
-                        <td className="py-3 px-4 text-right text-muted-foreground">
-                          ${campaign.cpa.toFixed(2)}
-                        </td>
+              {statsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                          Campaign Name
+                        </th>
+                        <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">
+                          Spend
+                        </th>
+                        <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">
+                          Impressions
+                        </th>
+                        <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">
+                          CTR %
+                        </th>
+                        <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">
+                          Conversions
+                        </th>
+                        <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">
+                          CPA
+                        </th>
+                        <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                          Status
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {googleCampaignsData.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                            No Google campaigns found
+                          </td>
+                        </tr>
+                      ) : (
+                        googleCampaignsData.map((campaign) => (
+                          <tr
+                            key={campaign.id}
+                            className="border-b border-border hover:bg-muted/50 transition-colors"
+                          >
+                            <td className="py-3 px-4 font-medium">
+                              {campaign.name}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              ${campaign.spend.toLocaleString()}
+                            </td>
+                            <td className="py-3 px-4 text-right text-muted-foreground">
+                              {campaign.impressions.toLocaleString()}
+                            </td>
+                            <td className="py-3 px-4 text-right font-semibold text-primary">
+                              {campaign.ctr}%
+                            </td>
+                            <td className="py-3 px-4 text-right font-semibold">
+                              {campaign.conversions}
+                            </td>
+                            <td className="py-3 px-4 text-right text-muted-foreground">
+                              ${campaign.cpa.toFixed(2)}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span
+                                className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                                  campaign.status === "active"
+                                    ? "bg-success/10 text-success"
+                                    : "bg-warning/10 text-warning"
+                                }`}
+                              >
+                                {campaign.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="linkedin">

@@ -1,7 +1,10 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, ImageIcon, TrendingUp, DollarSign, Download } from "lucide-react";
+import { FileText, ImageIcon, TrendingUp, DollarSign, Download, Loader2 } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -14,30 +17,164 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import {
+  supabase,
 
-const productionTrendData = [
-  { week: "Week 1", blogs: 12, social: 28, newsletters: 4, graphics: 34 },
-  { week: "Week 2", blogs: 15, social: 32, newsletters: 4, graphics: 41 },
-  { week: "Week 3", blogs: 11, social: 29, newsletters: 5, graphics: 38 },
-  { week: "Week 4", blogs: 18, social: 35, newsletters: 4, graphics: 45 },
-];
+} from "@/lib/supabase";
+// Add these interfaces to your existing lib/supabase.ts
 
-const topPerformingData = [
-  { title: "10 HIPAA Compliance Tips", views: 12400, engagement: 8.7, leads: 234 },
-  { title: "Healthcare IT Trends 2024", views: 9800, engagement: 7.2, leads: 189 },
-  { title: "Reducing Hospital Costs", views: 8600, engagement: 9.1, leads: 267 },
-  { title: "EMR System Selection Guide", views: 7200, engagement: 6.8, leads: 156 },
-];
+export interface ContentEngineStats {
+  id: string;
+  content_pieces: number;
+  content_pieces_change: number;
+  canva_graphics: number;
+  canva_graphics_change: number;
+  templates_used: number;
+  avg_engagement: number;
+  avg_engagement_change: number;
+  content_roi: number;
+  content_roi_change: number;
+  period_start: string;
+  period_end: string;
+  created_at: string;
+  updated_at: string;
+}
 
-const scheduledContentData = [
-  { date: "2024-02-06", title: "Medical Device Security Best Practices", type: "Blog", status: "scheduled" },
-  { date: "2024-02-07", title: "Top 5 Healthcare IT Innovations", type: "Newsletter", status: "scheduled" },
-  { date: "2024-02-08", title: "LinkedIn Post: Patient Data Privacy", type: "Social", status: "draft" },
-  { date: "2024-02-09", title: "Hospital Cost Reduction Strategies", type: "Blog", status: "scheduled" },
-  { date: "2024-02-10", title: "Compliance Update Infographic", type: "Social", status: "scheduled" },
-];
+export interface ProductionTrend {
+  id: string;
+  week: string;
+  blogs: number;
+  social: number;
+  newsletters: number;
+  graphics: number;
+  week_start_date: string;
+  created_at: string;
+  updated_at: string;
+}
 
+export interface TopPerformingContent {
+  id: string;
+  title: string;
+  views: number;
+  engagement: number;
+  leads: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScheduledContent {
+  id: string;
+  publish_date: string;
+  title: string;
+  type: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
 export default function ContentEngine() {
+  const [stats, setStats] = useState<ContentEngineStats | null>(null);
+  const [productionTrendData, setProductionTrendData] = useState<ProductionTrend[]>([]);
+  const [topPerformingData, setTopPerformingData] = useState<TopPerformingContent[]>([]);
+  const [scheduledContentData, setScheduledContentData] = useState<ScheduledContent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (!supabase) {
+        throw new Error('Supabase client not initialized. Please check your environment variables.');
+      }
+
+      // Fetch stats
+      const { data: statsData, error: statsError } = await supabase
+        .from('content_engine_stats')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (statsError) throw statsError;
+      setStats(statsData);
+
+      // Fetch production trends
+      const { data: trendsData, error: trendsError } = await supabase
+        .from('production_trends')
+        .select('*')
+        .order('week_start_date', { ascending: true });
+
+      if (trendsError) throw trendsError;
+      setProductionTrendData(trendsData || []);
+
+      // Fetch top performing content
+      const { data: topData, error: topError } = await supabase
+        .from('top_performing_content')
+        .select('*')
+        .order('leads', { ascending: false })
+        .limit(10);
+
+      if (topError) throw topError;
+      setTopPerformingData(topData || []);
+
+      // Fetch scheduled content (next 30 days)
+      const { data: scheduledData, error: scheduledError } = await supabase
+        .from('scheduled_content')
+        .select('*')
+        .gte('publish_date', new Date().toISOString().split('T')[0])
+        .order('publish_date', { ascending: true })
+        .limit(20);
+
+      if (scheduledError) throw scheduledError;
+      setScheduledContentData(scheduledData || []);
+
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+  };
+
+  const formatCurrency = (value: number) => {
+    if (value >= 1000) {
+      return `$${(value / 1000).toFixed(0)}K`;
+    }
+    return `$${value}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+        <div className="text-center">
+          <p className="text-destructive mb-4">{error}</p>
+          <Button onClick={fetchData}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -53,36 +190,38 @@ export default function ContentEngine() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Content Pieces"
-          value="248"
-          change={16.2}
-          icon={<FileText className="h-5 w-5" />}
-          subtitle="Last 30 days"
-        />
-        <StatCard
-          title="Canva Graphics"
-          value="158"
-          change={22.4}
-          icon={<ImageIcon className="h-5 w-5" />}
-          subtitle="Templates used: 34"
-        />
-        <StatCard
-          title="Avg Engagement"
-          value="7.9%"
-          change={4.7}
-          icon={<TrendingUp className="h-5 w-5" />}
-          subtitle="Across all channels"
-        />
-        <StatCard
-          title="Content ROI"
-          value="$89K"
-          change={28.3}
-          icon={<DollarSign className="h-5 w-5" />}
-          subtitle="Attributed revenue"
-        />
-      </div>
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="Content Pieces"
+            value={stats.content_pieces.toLocaleString()}
+            change={stats.content_pieces_change}
+            icon={<FileText className="h-5 w-5" />}
+            subtitle="Last 30 days"
+          />
+          <StatCard
+            title="Canva Graphics"
+            value={stats.canva_graphics.toLocaleString()}
+            change={stats.canva_graphics_change}
+            icon={<ImageIcon className="h-5 w-5" />}
+            subtitle={`Templates used: ${stats.templates_used}`}
+          />
+          <StatCard
+            title="Avg Engagement"
+            value={`${stats.avg_engagement}%`}
+            change={stats.avg_engagement_change}
+            icon={<TrendingUp className="h-5 w-5" />}
+            subtitle="Across all channels"
+          />
+          <StatCard
+            title="Content ROI"
+            value={formatCurrency(stats.content_roi)}
+            change={stats.content_roi_change}
+            icon={<DollarSign className="h-5 w-5" />}
+            subtitle="Attributed revenue"
+          />
+        </div>
+      )}
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -119,7 +258,7 @@ export default function ContentEngine() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={topPerformingData} layout="vertical">
+              <BarChart data={topPerformingData.slice(0, 4)} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis type="number" className="text-xs" />
                 <YAxis dataKey="title" type="category" className="text-xs" width={180} />
@@ -155,26 +294,36 @@ export default function ContentEngine() {
                 </tr>
               </thead>
               <tbody>
-                {scheduledContentData.map((content, index) => (
-                  <tr key={index} className="border-b border-border hover:bg-muted/50 transition-colors">
-                    <td className="py-3 px-4 text-sm text-muted-foreground">{content.date}</td>
-                    <td className="py-3 px-4 font-medium">{content.title}</td>
-                    <td className="py-3 px-4">
-                      <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-primary/10 text-primary">
-                        {content.type}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                          content.status === "scheduled" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
-                        }`}
-                      >
-                        {content.status}
-                      </span>
+                {scheduledContentData.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-muted-foreground">
+                      No scheduled content
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  scheduledContentData.map((content) => (
+                    <tr key={content.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+                      <td className="py-3 px-4 text-sm text-muted-foreground">
+                        {formatDate(content.publish_date)}
+                      </td>
+                      <td className="py-3 px-4 font-medium">{content.title}</td>
+                      <td className="py-3 px-4">
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-primary/10 text-primary">
+                          {content.type}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                            content.status === "scheduled" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
+                          }`}
+                        >
+                          {content.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +14,7 @@ import {
   Download,
   Search,
   Upload,
+  Loader2,
 } from "lucide-react";
 import {
   ScatterChart,
@@ -25,107 +29,163 @@ import {
   ResponsiveContainer,
   ZAxis,
 } from "recharts";
+import {
+  supabase,
 
-const keywordVolumeData = [
-  {
-    keyword: "HIPAA compliance",
-    volume: 8100,
-    competition: 68,
-    category: "Regulatory",
-  },
-  {
-    keyword: "healthcare IT solutions",
-    volume: 5400,
-    competition: 72,
-    category: "Commercial",
-  },
-  {
-    keyword: "medical device security",
-    volume: 2900,
-    competition: 45,
-    category: "Clinical",
-  },
-  {
-    keyword: "hospital EMR system",
-    volume: 6700,
-    competition: 81,
-    category: "Clinical",
-  },
-  {
-    keyword: "medicare reimbursement",
-    volume: 4200,
-    competition: 58,
-    category: "Reimbursement",
-  },
-  {
-    keyword: "patient data privacy",
-    volume: 3800,
-    competition: 52,
-    category: "Regulatory",
-  },
-  {
-    keyword: "healthcare cloud solutions",
-    volume: 2100,
-    competition: 39,
-    category: "Commercial",
-  },
-  {
-    keyword: "clinical workflow automation",
-    volume: 1800,
-    competition: 42,
-    category: "Clinical",
-  },
-];
+} from "@/lib/supabase";
+// Add these interfaces to your existing lib/supabase.ts
 
-const discoveryTrendData = [
-  { month: "Sep", keywords: 234 },
-  { month: "Oct", keywords: 312 },
-  { month: "Nov", keywords: 287 },
-  { month: "Dec", keywords: 356 },
-  { month: "Jan", keywords: 423 },
-  { month: "Feb", keywords: 498 },
-];
+export interface SEOKeywordsStats {
+  id: string;
+  total_keywords: number;
+  total_keywords_change: number;
+  high_volume_keywords: number;
+  high_volume_keywords_change: number;
+  low_competition_keywords: number;
+  low_competition_keywords_change: number;
+  documents_analyzed: number;
+  documents_analyzed_change: number;
+  period_start: string;
+  period_end: string;
+  created_at: string;
+  updated_at: string;
+}
 
-const topKeywordsData = [
-  {
-    keyword: "HIPAA compliance software",
-    volume: 8100,
-    competition: 68,
-    category: "Regulatory",
-    rank: 12,
-  },
-  {
-    keyword: "hospital EMR systems",
-    volume: 6700,
-    competition: 81,
-    category: "Clinical",
-    rank: 18,
-  },
-  {
-    keyword: "healthcare IT solutions",
-    volume: 5400,
-    competition: 72,
-    category: "Commercial",
-    rank: 15,
-  },
-  {
-    keyword: "medicare reimbursement rates",
-    volume: 4200,
-    competition: 58,
-    category: "Reimbursement",
-    rank: 22,
-  },
-  {
-    keyword: "patient data security",
-    volume: 3800,
-    competition: 52,
-    category: "Regulatory",
-    rank: 9,
-  },
-];
+export interface KeywordVolume {
+  id: string;
+  keyword: string;
+  volume: number;
+  competition: number;
+  category: string;
+  created_at: string;
+  updated_at: string;
+}
 
+export interface KeywordDiscoveryTrend {
+  id: string;
+  month: string;
+  keywords: number;
+  date: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TopKeyword {
+  id: string;
+  keyword: string;
+  volume: number;
+  competition: number;
+  category: string;
+  rank: number | null;
+  created_at: string;
+  updated_at: string;
+}
 export default function SEOKeywords() {
   const navigate = useNavigate();
+
+  const [stats, setStats] = useState<SEOKeywordsStats | null>(null);
+  const [keywordVolumeData, setKeywordVolumeData] = useState<KeywordVolume[]>([]);
+  const [discoveryTrendData, setDiscoveryTrendData] = useState<KeywordDiscoveryTrend[]>([]);
+  const [topKeywordsData, setTopKeywordsData] = useState<TopKeyword[]>([]);
+  const [filteredKeywords, setFilteredKeywords] = useState<TopKeyword[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    // Filter keywords based on search query
+    if (searchQuery.trim() === "") {
+      setFilteredKeywords(topKeywordsData);
+    } else {
+      const query = searchQuery.toLowerCase();
+      const filtered = topKeywordsData.filter(
+        (keyword) =>
+          keyword.keyword.toLowerCase().includes(query) ||
+          keyword.category.toLowerCase().includes(query)
+      );
+      setFilteredKeywords(filtered);
+    }
+  }, [searchQuery, topKeywordsData]);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (!supabase) {
+        throw new Error('Supabase client not initialized. Please check your environment variables.');
+      }
+
+      // Fetch stats
+      const { data: statsData, error: statsError } = await supabase
+        .from('seo_keywords_stats')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (statsError) throw statsError;
+      setStats(statsData);
+
+      // Fetch keyword volume data
+      const { data: volumeData, error: volumeError } = await supabase
+        .from('keyword_volume')
+        .select('*')
+        .order('volume', { ascending: false });
+
+      if (volumeError) throw volumeError;
+      setKeywordVolumeData(volumeData || []);
+
+      // Fetch discovery trend data
+      const { data: trendData, error: trendError } = await supabase
+        .from('keyword_discovery_trend')
+        .select('*')
+        .order('date', { ascending: true });
+
+      if (trendError) throw trendError;
+      setDiscoveryTrendData(trendData || []);
+
+      // Fetch top keywords
+      const { data: topData, error: topError } = await supabase
+        .from('top_keywords')
+        .select('*')
+        .order('volume', { ascending: false })
+        .limit(50);
+
+      if (topError) throw topError;
+      setTopKeywordsData(topData || []);
+      setFilteredKeywords(topData || []);
+
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+        <div className="text-center">
+          <p className="text-destructive mb-4">{error}</p>
+          <Button onClick={fetchData}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -150,36 +210,38 @@ export default function SEOKeywords() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Keywords"
-          value="2,847"
-          change={18.3}
-          icon={<Tag className="h-5 w-5" />}
-          subtitle="Across all categories"
-        />
-        <StatCard
-          title="High-Volume (>1K)"
-          value="423"
-          change={12.7}
-          icon={<TrendingUp className="h-5 w-5" />}
-          subtitle="Strong search potential"
-        />
-        <StatCard
-          title="Low Competition"
-          value="867"
-          change={24.1}
-          icon={<Target className="h-5 w-5" />}
-          subtitle="Easy to rank"
-        />
-        <StatCard
-          title="Documents Analyzed"
-          value="124"
-          change={8.9}
-          icon={<FileText className="h-5 w-5" />}
-          subtitle="Last 30 days"
-        />
-      </div>
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="Total Keywords"
+            value={stats.total_keywords.toLocaleString()}
+            change={stats.total_keywords_change}
+            icon={<Tag className="h-5 w-5" />}
+            subtitle="Across all categories"
+          />
+          <StatCard
+            title="High-Volume (>1K)"
+            value={stats.high_volume_keywords.toLocaleString()}
+            change={stats.high_volume_keywords_change}
+            icon={<TrendingUp className="h-5 w-5" />}
+            subtitle="Strong search potential"
+          />
+          <StatCard
+            title="Low Competition"
+            value={stats.low_competition_keywords.toLocaleString()}
+            change={stats.low_competition_keywords_change}
+            icon={<Target className="h-5 w-5" />}
+            subtitle="Easy to rank"
+          />
+          <StatCard
+            title="Documents Analyzed"
+            value={stats.documents_analyzed.toLocaleString()}
+            change={stats.documents_analyzed_change}
+            icon={<FileText className="h-5 w-5" />}
+            subtitle="Last 30 days"
+          />
+        </div>
+      )}
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -256,7 +318,12 @@ export default function SEOKeywords() {
             <CardTitle>Top Keywords by Volume</CardTitle>
             <div className="relative w-64">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search keywords..." className="pl-8" />
+              <Input
+                placeholder="Search keywords..."
+                className="pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
           </div>
         </CardHeader>
@@ -283,38 +350,46 @@ export default function SEOKeywords() {
                 </tr>
               </thead>
               <tbody>
-                {topKeywordsData.map((keyword, index) => (
-                  <tr
-                    key={index}
-                    className="border-b border-border hover:bg-muted/50 transition-colors"
-                  >
-                    <td className="py-3 px-4 font-medium">{keyword.keyword}</td>
-                    <td className="py-3 px-4 text-right font-semibold">
-                      {keyword.volume.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <span
-                        className={`font-medium ${
-                          keyword.competition < 50
-                            ? "text-success"
-                            : keyword.competition < 70
-                            ? "text-primary"
-                            : "text-warning"
-                        }`}
-                      >
-                        {keyword.competition}%
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-primary/10 text-primary">
-                        {keyword.category}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-center text-sm text-muted-foreground">
-                      #{keyword.rank}
+                {filteredKeywords.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                      No keywords found
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredKeywords.map((keyword) => (
+                    <tr
+                      key={keyword.id}
+                      className="border-b border-border hover:bg-muted/50 transition-colors"
+                    >
+                      <td className="py-3 px-4 font-medium">{keyword.keyword}</td>
+                      <td className="py-3 px-4 text-right font-semibold">
+                        {keyword.volume.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <span
+                          className={`font-medium ${
+                            keyword.competition < 50
+                              ? "text-success"
+                              : keyword.competition < 70
+                              ? "text-primary"
+                              : "text-warning"
+                          }`}
+                        >
+                          {keyword.competition}%
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-primary/10 text-primary">
+                          {keyword.category}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center text-sm text-muted-foreground">
+                        {keyword.rank ? `#${keyword.rank}` : '-'}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
