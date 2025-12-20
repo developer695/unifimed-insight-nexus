@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdStatus, AdVariation } from "@/types/ads";
-import { CheckCircle, XCircle, RefreshCw, Eye } from "lucide-react";
+import { CheckCircle, PlayCircle, PauseCircle, Trash2, RefreshCw, Eye } from "lucide-react";
 import { useState } from "react";
 import { ConfirmationDialog } from "./ConfirmationDialog";
 
@@ -15,24 +15,29 @@ interface AdApprovalActionsProps {
 export function AdApprovalActions({ ad, onStatusChange, onViewDetails, isUpdating }: AdApprovalActionsProps) {
     const { user } = useAuth();
     const [showApproveDialog, setShowApproveDialog] = useState(false);
-    const [showDeclineDialog, setShowDeclineDialog] = useState(false);
-    const [showResetDialog, setShowResetDialog] = useState(false);
+    const [showPauseDialog, setShowPauseDialog] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     const adminName = user?.email?.split('@')[0] || 'Admin';
 
     const handleApprove = async () => {
         setShowApproveDialog(false);
-        await onStatusChange(ad.id, 'approved', adminName);
+        await onStatusChange(ad.id, 'APPROVED', adminName);
     };
 
-    const handleDecline = async () => {
-        setShowDeclineDialog(false);
-        await onStatusChange(ad.id, 'declined', adminName);
+
+    const handleResume = async () => {
+        // When resuming from PAUSED, we use 'ACTIVE' status
+        await onStatusChange(ad.id, 'ACTIVE', adminName);
+    };
+    const handlePause = async () => {
+        setShowPauseDialog(false);
+        await onStatusChange(ad.id, 'PAUSED', adminName);
     };
 
-    const handleRevertToPending = async () => {
-        setShowResetDialog(false);
-        await onStatusChange(ad.id, 'pending', adminName);
+    const handleDelete = async () => {
+        setShowDeleteDialog(false);
+        await onStatusChange(ad.id, 'DELETED', adminName);
     };
 
     if (isUpdating) {
@@ -45,7 +50,7 @@ export function AdApprovalActions({ ad, onStatusChange, onViewDetails, isUpdatin
 
     return (
         <>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
                 {/* View Details Button */}
                 <Button
                     size="sm"
@@ -57,35 +62,53 @@ export function AdApprovalActions({ ad, onStatusChange, onViewDetails, isUpdatin
                 </Button>
 
                 {/* Action Buttons */}
-                {ad.status === 'pending' && (
+                {ad.approval_status === 'PENDING' && (
+                    <Button
+                        size="sm"
+                        onClick={() => setShowApproveDialog(true)}
+                        className="bg-green-600 hover:bg-green-700"
+                    >
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Approve
+                    </Button>
+                )}
+
+                {/* Campaign Management Actions */}
+                {ad.approval_status === 'APPROVED' && ad.status !== 'DELETED' && (
                     <>
-                        <Button
-                            size="sm"
-                            onClick={() => setShowApproveDialog(true)}
-                            className="bg-green-600 hover:bg-green-700"
-                        >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Approve
-                        </Button>
+                        {/* Pause/Resume Button */}
+                        {ad.status === 'ACTIVE' && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setShowPauseDialog(true)}
+                                className="border-orange-600 text-orange-600 hover:bg-orange-50"
+                            >
+                                <PauseCircle className="h-4 w-4 mr-1" />
+                                Pause
+                            </Button>
+                        )}
+                        {ad.status === 'PAUSED' && (
+                            <Button
+                                size="sm"
+                                onClick={handleResume}
+                                className="bg-blue-600 hover:bg-blue-700"
+                            >
+                                <PlayCircle className="h-4 w-4 mr-1" />
+                                Resume
+                            </Button>
+                        )}
+
+                        {/* Delete Button */}
                         <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => setShowDeclineDialog(true)}
+                            onClick={() => setShowDeleteDialog(true)}
                         >
-                            <XCircle className="h-4 w-4 mr-1" />
-                            Decline
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
                         </Button>
                     </>
-                )}
-                {(ad.status === 'approved' || ad.status === 'declined') && (
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setShowResetDialog(true)}
-                    >
-                        <RefreshCw className="h-4 w-4 mr-1" />
-                        Reset
-                    </Button>
                 )}
             </div>
 
@@ -94,31 +117,33 @@ export function AdApprovalActions({ ad, onStatusChange, onViewDetails, isUpdatin
                 isOpen={showApproveDialog}
                 onClose={() => setShowApproveDialog(false)}
                 onConfirm={handleApprove}
-                title="Approve Ad Variation"
-                description="Are you sure you want to approve this ad variation? This action will mark it as approved and it will be ready for use in campaigns."
+                title="Approve Ad Campaign"
+                description="Are you sure you want to approve this ad campaign? It will be ready for activation."
                 type="approve"
                 isLoading={isUpdating}
             />
 
-            {/* Decline Confirmation Dialog */}
+
+            {/* Pause Confirmation Dialog */}
             <ConfirmationDialog
-                isOpen={showDeclineDialog}
-                onClose={() => setShowDeclineDialog(false)}
-                onConfirm={handleDecline}
-                title="Decline Ad Variation"
-                description="Are you sure you want to decline this ad variation? This action will mark it as declined and it will not be used in campaigns."
-                type="decline"
+                isOpen={showPauseDialog}
+                onClose={() => setShowPauseDialog(false)}
+                onConfirm={handlePause}
+                title="Pause Ad Campaign"
+                description="Are you sure you want to pause this ad campaign? It will stop serving ads but can be resumed later."
+                type="info"
                 isLoading={isUpdating}
             />
 
-            {/* Reset Confirmation Dialog */}
+            {/* Delete Confirmation Dialog */}
             <ConfirmationDialog
-                isOpen={showResetDialog}
-                onClose={() => setShowResetDialog(false)}
-                onConfirm={handleRevertToPending}
-                title="Reset Ad Status"
-                description="Are you sure you want to reset this ad variation back to pending? This will allow it to be reviewed again."
-                type="reset"
+                isOpen={showDeleteDialog}
+                onClose={() => setShowDeleteDialog(false)}
+                onConfirm={handleDelete}
+                title="Delete Ad Campaign"
+                description="Are you sure you want to delete this ad campaign? This action cannot be undone."
+                type="decline"
+                confirmText="Delete"
                 isLoading={isUpdating}
             />
         </>

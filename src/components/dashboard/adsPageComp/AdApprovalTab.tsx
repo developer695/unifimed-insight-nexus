@@ -13,11 +13,19 @@ interface AdApprovalTabProps {
     onRefresh: () => Promise<void>;
 }
 
-
-export function AdApprovalTab({ ads, loading, updatingId, onStatusChange, onRefresh, onViewDetails }: AdApprovalTabProps) {
-    const pendingCount = ads.filter(ad => ad.status === 'pending').length;
-    const approvedCount = ads.filter(ad => ad.status === 'approved').length;
-    const declinedCount = ads.filter(ad => ad.status === 'declined').length;
+export function AdApprovalTab({
+    ads,
+    loading,
+    updatingId,
+    onStatusChange,
+    onViewDetails,
+    onRefresh
+}: AdApprovalTabProps) {
+    const pendingApprovalCount = ads.filter(ad => ad.approval_status === 'PENDING').length;
+    const approvedCount = ads.filter(ad => ad.approval_status === 'APPROVED').length;
+    const activeCount = ads.filter(ad => ad.status === 'ACTIVE').length;
+    const pausedCount = ads.filter(ad => ad.status === 'PAUSED').length;
+    const deletedCount = ads.filter(ad => ad.status === 'DELETED').length;
 
     if (loading) {
         return (
@@ -30,23 +38,35 @@ export function AdApprovalTab({ ads, loading, updatingId, onStatusChange, onRefr
     return (
         <div className="space-y-4">
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <Card>
                     <CardContent className="pt-6">
-                        <div className="text-2xl font-bold text-yellow-600">{pendingCount}</div>
-                        <p className="text-sm text-muted-foreground">Pending Review</p>
+                        <div className="text-2xl font-bold text-yellow-600">{pendingApprovalCount}</div>
+                        <p className="text-sm text-muted-foreground">Pending Approval</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardContent className="pt-6">
-                        <div className="text-2xl font-bold text-green-600">{approvedCount}</div>
+                        <div className="text-2xl font-bold text-blue-600">{approvedCount}</div>
                         <p className="text-sm text-muted-foreground">Approved</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardContent className="pt-6">
-                        <div className="text-2xl font-bold text-red-600">{declinedCount}</div>
-                        <p className="text-sm text-muted-foreground">Declined</p>
+                        <div className="text-2xl font-bold text-green-600">{activeCount}</div>
+                        <p className="text-sm text-muted-foreground">Active</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="text-2xl font-bold text-orange-600">{pausedCount}</div>
+                        <p className="text-sm text-muted-foreground">Paused</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="text-2xl font-bold text-red-600">{deletedCount}</div>
+                        <p className="text-sm text-muted-foreground">Deleted</p>
                     </CardContent>
                 </Card>
             </div>
@@ -54,9 +74,9 @@ export function AdApprovalTab({ ads, loading, updatingId, onStatusChange, onRefr
             {/* Actions Bar */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h3 className="text-lg font-semibold">Ad Variations</h3>
+                    <h3 className="text-lg font-semibold">Google Ads Campaigns</h3>
                     <p className="text-sm text-muted-foreground">
-                        Review and manage ad variations {pendingCount > 0 && `- ${pendingCount} awaiting approval`}
+                        Manage Google Search Ads {pendingApprovalCount > 0 && `- ${pendingApprovalCount} awaiting approval`}
                     </p>
                 </div>
                 <Button

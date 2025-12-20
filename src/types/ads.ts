@@ -1,16 +1,24 @@
-export type AdStatus = "pending" | "approved" | "declined";
+export type AdStatus = "PENDING" | "APPROVED" | "ACTIVE" | "PAUSED" | "DELETED";
+
 export interface AdVariation {
   id: string;
-  primary_text: string;
-  headline: string;
-  description: string;
-  cta: string;
-  image_url: string;
-  platform: string;
+  campaign_id: string;
+  campaign_name: string;
+  ad_group_id: string;
+  ad_group_name: string;
+  headlines: string[];
+  descriptions: string[];
+  keywords: string[];
+  ads_url: string;
+  ad_id: string | null;
+  budget_micros: number;
   status: AdStatus;
+  approval_status: ApprovalStatus;
   approved_by: string | null;
   approved_at: string | null;
+  submitted_by: string;
   created_at: string;
+  updated_at: string;
 }
 
 
