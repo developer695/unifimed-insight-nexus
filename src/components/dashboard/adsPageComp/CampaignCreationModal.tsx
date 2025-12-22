@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, X, Loader2 } from "lucide-react";
 import { CampaignFormData, CampaignData } from "@/types/ads";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface CampaignCreationModalProps {
   isOpen: boolean;
@@ -225,14 +226,35 @@ export function CampaignCreationModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="ctaText">CTA Text</Label>
-            <Input
-              id="ctaText"
+            <Label htmlFor="ctaText" className="flex items-center gap-2">
+              Call To Action
+            </Label>
+            <Select
               value={formData.ctaText}
-              onChange={(e) => handleInputChange("ctaText", e.target.value)}
-              placeholder="Enter CTA text"
-            />
+              onValueChange={(value) => setFormData({ ...formData, ctaText: value })}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select CTA" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="APPLY">Apply</SelectItem>
+                <SelectItem value="DOWNLOAD">Download</SelectItem>
+                <SelectItem value="VIEW_QUOTE">View Quote</SelectItem>
+                <SelectItem value="LEARN_MORE">Learn More</SelectItem>
+                <SelectItem value="SIGN_UP">Sign Up</SelectItem>
+                <SelectItem value="SUBSCRIBE">Subscribe</SelectItem>
+                <SelectItem value="REGISTER">Register</SelectItem>
+                <SelectItem value="JOIN">Join</SelectItem>
+                <SelectItem value="ATTEND">Attend</SelectItem>
+                <SelectItem value="REQUEST_DEMO">Register Demo</SelectItem>
+                <SelectItem value="SEE_MORE">See More</SelectItem>
+                <SelectItem value="BUY_NOW">Buy Now</SelectItem>
+                <SelectItem value="SHOP_NOW">Shop Now</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
 
           <div className="space-y-2">
             <Label htmlFor="targetRole">Target Role</Label>
