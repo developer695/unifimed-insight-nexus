@@ -85,6 +85,11 @@ const navItems: NavItem[] = [
     href: "/analytics",
     icon: BarChart3,
   },
+    {
+    title: "Landing Pages",
+    href: "/landing-pages",
+    icon: BarChart3,
+  },
   {
     title: "Settings",
     href: "/settings",
