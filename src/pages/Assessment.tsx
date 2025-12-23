@@ -237,9 +237,9 @@ const Assessment: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-900 via-blue-800 to-blue-600 text-white py-24 md:py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-black/10"></div>
+     
+      <section className="relative bg-primary text-white py-24 md:py-32 overflow-hidden">
+        <div className="absolute inset-0 "></div>
         <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="text-center md:text-left">
@@ -266,7 +266,7 @@ const Assessment: React.FC = () => {
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start mt-8">
                 <a
                   href="#contact"
-                  className="group bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-amber-500/50 inline-block text-center"
+                  className="group bg-white text-primary px-8 py-4 rounded-lg font-semibold text-lg  transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-amber-500/50 inline-block text-center"
                   onClick={(e) => scrollToSection(e, "#contact")}
                 >
                   {landing_page.hero_section.primary_cta}
@@ -297,10 +297,10 @@ const Assessment: React.FC = () => {
             )}
           </div>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent"></div>
+        {/* <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent"></div> */}
       </section>
 
-      {/* Value Section */}
+      
       {landing_page.value_sections &&
         landing_page.value_sections.length > 0 && (
           <>
@@ -315,7 +315,7 @@ const Assessment: React.FC = () => {
                     <div
                       className={index % 2 === 0 ? "md:order-1" : "md:order-2"}
                     >
-                      <h2 className="text-4xl md:text-5xl font-bold mb-8 text-gray-900 leading-tight">
+                      <h2 className="text-4xl md:text-5xl font-bold mb-8 text-primary leading-tight">
                         {section.title}
                       </h2>
                       <div className="space-y-6">
@@ -331,7 +331,7 @@ const Assessment: React.FC = () => {
                                 ✓
                               </div>
                               <div>
-                                <h3 className="font-bold text-gray-900 text-lg mb-1">
+                                <h3 className="font-bold text-primary text-lg mb-1">
                                   {title.replace("•", "").trim()}
                                 </h3>
                                 {description && (
@@ -368,10 +368,10 @@ const Assessment: React.FC = () => {
           </>
         )}
 
-      {/* Credibility Section */}
+    
       {landing_page.credibility_section &&
         landing_page.credibility_section.points.length > 0 && (
-          <section className="relative py-20 md:py-28 bg-gradient-to-br from-gray-900 to-blue-900 text-white overflow-hidden">
+          <section className="relative py-20 md:py-28 bg-gradient-to-br from-primary to-blue-900 text-white overflow-hidden">
             {landing_page.credibility_section.background_image_url && (
               <div className="absolute inset-0 opacity-10">
                 <img
@@ -394,12 +394,12 @@ const Assessment: React.FC = () => {
                     key={index}
                     className="bg-white/10 backdrop-blur-md p-8 rounded-2xl border border-white/20 hover:bg-white/20 hover:scale-105 transition-all duration-300 shadow-xl"
                   >
-                    <div className="text-6xl text-amber-400 mb-4">"</div>
+                    <div className="text-6xl text-white mb-4">"</div>
                     <p className="text-lg leading-relaxed mb-6 italic">
                       {point.split('"')[1]}
                     </p>
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                      <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xl">
                         {point.split("–")[1]?.trim().charAt(0) || "U"}
                       </div>
                       <div className="text-sm">
@@ -422,24 +422,24 @@ const Assessment: React.FC = () => {
           </section>
         )}
 
-      {/* Process Section */}
+     
       {landing_page.process_section &&
         landing_page.process_section.steps.length > 0 && (
           <section className="py-20 md:py-28 bg-white relative">
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
               <div className="text-center mb-16">
-                <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
+                <h2 className="text-4xl md:text-5xl font-bold mb-6 text-primary leading-tight">
                   {landing_page.process_section.title}
                 </h2>
-                <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full"></div>
+                <div className="w-24 h-1 bg-gradient-to-r from-primary to-purple-200 mx-auto rounded-full"></div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
                 {landing_page.process_section.steps.map((step, index) => (
                   <div key={index} className="relative group">
-                    <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-blue-500 h-full transform hover:-translate-y-2">
+                    <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-primary h-full transform hover:-translate-y-2">
                       <div className="absolute -top-6 left-8">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-lg group-hover:scale-110 transition-transform">
+                        <div className="w-12 h-12 bg-gradient-to-br bg-primary text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-lg group-hover:scale-110 transition-transform">
                           {index + 1}
                         </div>
                       </div>
@@ -483,7 +483,7 @@ const Assessment: React.FC = () => {
           <div className="max-w-4xl mx-auto px-6 lg:px-8 relative z-10">
             <div className="bg-white p-10 md:p-12 rounded-3xl shadow-2xl border border-gray-100">
               <div className="text-center mb-10">
-                <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
+                <h2 className="text-4xl  md:text-5xl font-bold mb-4 text-primary leading-tight">
                   {landing_page.cta_section.headline}
                 </h2>
                 <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full mb-6"></div>
@@ -654,7 +654,7 @@ const Assessment: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-5 rounded-xl text-lg font-bold transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/50 mt-8 group"
+                  className="w-full bg-primary text-white px-8 py-5 rounded-xl text-lg font-bold transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/50 mt-8 group"
                 >
                   {landing_page.cta_section.cta_button}
                   <span className="inline-block ml-2 group-hover:translate-x-1 transition-transform">

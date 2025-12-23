@@ -131,7 +131,7 @@ export default function KeywordUpload() {
         title: "Upload successful",
         description: `${file.name} has been uploaded successfully.`,
       });
-    } catch (error: any) {
+    } catch (error) {
       // Error handling
       setUploadedFiles((prev) => {
         const updated = [...prev];
@@ -238,11 +238,10 @@ export default function KeywordUpload() {
         </CardHeader>
         <CardContent>
           <div
-            className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
-              isDragging
+            className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${isDragging
                 ? "border-primary bg-primary/5"
                 : "border-muted-foreground/25 hover:border-muted-foreground/50"
-            }`}
+              }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -310,8 +309,8 @@ export default function KeywordUpload() {
                           uploadedFile.status === "success"
                             ? "default"
                             : uploadedFile.status === "error"
-                            ? "destructive"
-                            : "secondary"
+                              ? "destructive"
+                              : "secondary"
                         }
                       >
                         {uploadedFile.status === "success" && (

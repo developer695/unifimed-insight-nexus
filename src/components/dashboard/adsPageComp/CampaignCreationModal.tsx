@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, X, Loader2 } from "lucide-react";
 import { CampaignFormData, CampaignData } from "@/types/ads";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LabelWithTooltip } from "../LabelWithTooltip";
 
 interface CampaignCreationModalProps {
   isOpen: boolean;
@@ -144,7 +145,10 @@ export function CampaignCreationModal({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="segment">Segment</Label>
+            <LabelWithTooltip
+              label="Segment"
+              tooltipContent="The target audience segment for this campaign"
+            />
             <Input
               id="segment"
               value={formData.segment}
@@ -154,7 +158,10 @@ export function CampaignCreationModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="opportunityType">Opportunity Type</Label>
+            <LabelWithTooltip
+              label="Opportunity Type"
+              tooltipContent="Type of business opportunity this campaign represents"
+            />
             <Input
               id="opportunityType"
               value={formData.opportunityType}
@@ -166,7 +173,10 @@ export function CampaignCreationModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="stage">Stage</Label>
+            <LabelWithTooltip
+              label="Stage"
+              tooltipContent="Current stage in the sales/marketing funnel"
+            />
             <Input
               id="stage"
               value={formData.stage}
@@ -176,7 +186,10 @@ export function CampaignCreationModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="leadMagnetType">Lead Magnet Type</Label>
+            <LabelWithTooltip
+              label="Lead Magnet Type"
+              tooltipContent="Type of offer used to attract potential customers"
+            />
             <select
               id="leadMagnetType"
               value={formData.leadMagnetType}
@@ -206,7 +219,10 @@ export function CampaignCreationModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="assetName">Asset Name</Label>
+            <LabelWithTooltip
+              label="Asset Name"
+              tooltipContent="Name of the downloadable or viewable asset"
+            />
             <Input
               id="assetName"
               value={formData.assetName}
@@ -216,7 +232,10 @@ export function CampaignCreationModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="assetUrl">Asset URL</Label>
+            <LabelWithTooltip
+              label="Asset URL"
+              tooltipContent="Direct link to the downloadable asset or resource"
+            />
             <Input
               id="assetUrl"
               value={formData.assetUrl}
@@ -226,9 +245,10 @@ export function CampaignCreationModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="ctaText" className="flex items-center gap-2">
-              Call To Action
-            </Label>
+            <LabelWithTooltip
+              label="Call To Action"
+              tooltipContent="Action you want users to take when they see your ad"
+            />
             <Select
               value={formData.ctaText}
               onValueChange={(value) => setFormData({ ...formData, ctaText: value })}
@@ -255,9 +275,11 @@ export function CampaignCreationModal({
             </Select>
           </div>
 
-
           <div className="space-y-2">
-            <Label htmlFor="targetRole">Target Role</Label>
+            <LabelWithTooltip
+              label="Target Role"
+              tooltipContent="Specific job role or position you're targeting"
+            />
             <Input
               id="targetRole"
               value={formData.targetRole}
@@ -267,7 +289,10 @@ export function CampaignCreationModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="sourceCampaign">Source Campaign</Label>
+            <LabelWithTooltip
+              label="Source Campaign"
+              tooltipContent="Original campaign that generated these leads"
+            />
             <Input
               id="sourceCampaign"
               value={formData.sourceCampaign}
@@ -279,7 +304,10 @@ export function CampaignCreationModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="crossSellPage">Cross Sell Page</Label>
+            <LabelWithTooltip
+              label="Cross Sell Page"
+              tooltipContent="Page where cross-sell offers are presented"
+            />
             <Input
               id="crossSellPage"
               value={formData.crossSellPage}
@@ -291,7 +319,10 @@ export function CampaignCreationModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="crossSellUrl">Cross Sell URL</Label>
+            <LabelWithTooltip
+              label="Cross Sell URL"
+              tooltipContent="Direct link to the cross-sell offer page"
+            />
             <Input
               id="crossSellUrl"
               value={formData.crossSellUrl}
@@ -303,7 +334,10 @@ export function CampaignCreationModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="crossSellCta">Cross Sell CTA</Label>
+            <LabelWithTooltip
+              label="Cross Sell CTA"
+              tooltipContent="Call to action for the cross-sell offer"
+            />
             <Input
               id="crossSellCta"
               value={formData.crossSellCta}
@@ -317,7 +351,14 @@ export function CampaignCreationModal({
 
         {/* Custom Fields Section */}
         <div className="space-y-4 pt-4 border-t">
-          <h3 className="text-lg font-semibold">Custom Fields</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Custom Fields</h3>
+            <LabelWithTooltip
+              label=""
+              tooltipContent="Additional custom fields for tracking specific campaign data"
+              iconClassName="h-4 w-4"
+            />
+          </div>
 
           {Object.entries(formData.customFields).length > 0 && (
             <div className="space-y-2">
@@ -343,28 +384,40 @@ export function CampaignCreationModal({
           )}
 
           <div className="flex gap-2">
-            <div className="flex-1">
+            <div className="flex-1 space-y-2">
+              <LabelWithTooltip
+                label="Field Name"
+                tooltipContent="Name of the custom field"
+                className="text-xs"
+              />
               <Input
-                placeholder="Field name"
+                placeholder="Enter field name"
                 value={customFieldName}
                 onChange={(e) => setCustomFieldName(e.target.value)}
               />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 space-y-2">
+              <LabelWithTooltip
+                label="Field Value"
+                tooltipContent="Value for the custom field"
+                className="text-xs"
+              />
               <Input
-                placeholder="Field value"
+                placeholder="Enter field value"
                 value={customFieldValue}
                 onChange={(e) => setCustomFieldValue(e.target.value)}
               />
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={addCustomField}
-              disabled={!customFieldName.trim() || !customFieldValue.trim()}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+            <div className="flex items-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addCustomField}
+                disabled={!customFieldName.trim() || !customFieldValue.trim()}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
 

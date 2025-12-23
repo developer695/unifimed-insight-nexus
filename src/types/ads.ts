@@ -62,6 +62,7 @@ export interface LinkedInCampaign {
   end_date: string | null;
   ad_text: string;
   image_url: string;
+  image_public_id?: string;
   landing_page_url: string;
   call_to_action: string;
   target_location: string | null;

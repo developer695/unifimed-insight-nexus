@@ -59,7 +59,6 @@ export default function AdCampaigns() {
   const {
     linkedinCampaigns,
     linkedinLoading,
-    linkedinUpdatingId,
     selectedLinkedInCampaign,
     isLinkedInModalOpen,
     fetchLinkedInCampaigns,

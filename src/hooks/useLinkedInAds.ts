@@ -293,6 +293,7 @@ export const useLinkedInAds = () => {
                 .update({
                     user_id: userId,
                     objective: campaign.objective,
+                    ad_text: campaign.ad_text,
                     daily_budget: campaign.daily_budget,
                     total_budget: campaign.total_budget,
                     currency: campaign.currency,
@@ -301,6 +302,8 @@ export const useLinkedInAds = () => {
                     target_location: campaign.target_location,
                     target_language: campaign.target_language,
                     updated_at: new Date().toISOString(),
+                    image_url: campaign.image_url,
+                    linkedin_image_urn: campaign.linkedin_image_urn,
                     ...(campaign.rejection_reason && {
                         rejection_reason: campaign.rejection_reason,
                         approval_status: "REJECTED"

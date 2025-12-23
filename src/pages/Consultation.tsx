@@ -236,7 +236,7 @@ const Consultation: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-teal-50 via-white to-cyan-50">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-teal-700 via-teal-600 to-cyan-600 text-white py-24 md:py-32 overflow-hidden">
+      <section className="relative bg-primary text-white py-24 md:py-32 overflow-hidden">
         {/* Pattern overlay */}
         <div className="absolute inset-0 opacity-10">
           <div
@@ -251,10 +251,10 @@ const Consultation: React.FC = () => {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-amber-400 rounded-2xl flex items-center justify-center shadow-lg">
+                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg">
                   <span className="text-2xl">🎯</span>
                 </div>
-                <span className="text-amber-300 font-bold text-sm uppercase tracking-wide">
+                <span className="text-white font-bold text-sm uppercase tracking-wide">
                   Strategic Consultation
                 </span>
               </div>
@@ -271,7 +271,7 @@ const Consultation: React.FC = () => {
               )}
               <a
                 href="#contact"
-                className="group inline-flex items-center bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-amber-500/50"
+                className="group inline-flex items-center text-primary bg-white px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/30"
                 onClick={(e) => scrollToSection(e, "#contact")}
               >
                 {landing_page.hero_section.primary_cta}
@@ -299,14 +299,14 @@ const Consultation: React.FC = () => {
         </div>
       </section>
 
-      {/* Brief Positioning Section */}
+
       {landing_page.value_sections &&
         landing_page.value_sections.length > 0 &&
         landing_page.value_sections[0] && (
-          <section className="py-16 md:py-20 bg-gradient-to-br from-teal-50 via-cyan-50 to-teal-50">
+          <section className="py-16 md:py-20 bg-white">
             <div className="max-w-5xl mx-auto px-6 lg:px-8 text-center">
-              <div className="bg-white/80 backdrop-blur-sm p-10 md:p-12 rounded-3xl shadow-xl border-2 border-teal-100">
-                <p className="text-xl md:text-2xl text-teal-900 leading-relaxed font-medium">
+              <div className="bg-white/80 backdrop-blur-sm p-10 md:p-12 rounded-3xl shadow-xl border-2 border-primary/30">
+                <p className="text-xl md:text-2xl text-gray-800 leading-relaxed font-medium">
                   {landing_page.value_sections[0].body}
                 </p>
               </div>
@@ -314,14 +314,14 @@ const Consultation: React.FC = () => {
           </section>
         )}
 
-      {/* Common Failure Patterns Section */}
+
       {landing_page.value_sections &&
         landing_page.value_sections.length > 1 &&
         landing_page.value_sections[1] && (
           <section className="py-20 md:py-28 bg-white">
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
               <div className="text-center mb-16">
-                <h2 className="text-4xl md:text-5xl font-extrabold mb-4 text-gray-900">
+                <h2 className="text-4xl md:text-5xl font-extrabold mb-4 text-primary">
                   {landing_page.value_sections[1].title}
                 </h2>
                 <div className="w-32 h-1.5 bg-gradient-to-r from-red-500 to-orange-500 mx-auto rounded-full"></div>
@@ -354,19 +354,19 @@ const Consultation: React.FC = () => {
           <section className="py-20 md:py-28 bg-gradient-to-br from-gray-50 to-teal-50">
             <div className="max-w-5xl mx-auto px-6 lg:px-8">
               <div className="text-center mb-16">
-                <h2 className="text-4xl md:text-5xl font-extrabold mb-4 text-teal-900">
+                <h2 className="text-4xl md:text-5xl font-extrabold mb-4 text-primary">
                   {landing_page.credibility_section.title}
                 </h2>
-                <div className="w-32 h-1.5 bg-gradient-to-r from-teal-600 to-cyan-600 mx-auto rounded-full"></div>
+                <div className="w-32 h-1.5 bg-primary mx-auto rounded-full"></div>
               </div>
 
               <div className="space-y-5">
                 {landing_page.credibility_section.points.map((point, index) => (
                   <div
                     key={index}
-                    className="group flex items-start gap-6 bg-white p-6 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 transform hover:translate-x-2 border-l-4 border-teal-500"
+                    className="group flex items-start gap-6 bg-white p-6 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 transform hover:translate-x-2 border-l-4 border-primary"
                   >
-                    <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform">
+                    <div className="flex-shrink-0 w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform">
                       ✓
                     </div>
                     <p className="text-gray-700 text-lg leading-relaxed pt-2">
@@ -388,7 +388,7 @@ const Consultation: React.FC = () => {
                 <h2 className="text-4xl md:text-5xl font-extrabold mb-4 text-gray-900">
                   {landing_page.process_section.title}
                 </h2>
-                <div className="w-32 h-1.5 bg-gradient-to-r from-teal-600 to-cyan-600 mx-auto rounded-full"></div>
+                <div className="w-32 h-1.5 bg-primary mx-auto rounded-full"></div>
               </div>
 
               <div className="grid md:grid-cols-3 gap-8">
@@ -429,7 +429,7 @@ const Consultation: React.FC = () => {
       {/* CTA Form Section */}
       {landing_page.cta_section && (
         <section
-          className="relative py-20 md:py-28 bg-gradient-to-br from-teal-100 via-cyan-50 to-teal-100 overflow-hidden"
+          className="relative py-20 md:py-28 bg-primary overflow-hidden"
           id="contact"
         >
           <div className="absolute inset-0">
@@ -440,14 +440,14 @@ const Consultation: React.FC = () => {
           <div className="max-w-4xl mx-auto px-6 lg:px-8 relative z-10">
             <div className="bg-white p-10 md:p-14 rounded-3xl shadow-2xl border-2 border-teal-100">
               <div className="text-center mb-12">
-                <div className="inline-flex items-center gap-3 bg-teal-100 text-teal-700 px-6 py-3 rounded-full text-sm font-bold mb-6">
+                <div className="inline-flex items-center gap-3 bg-primary text-white px-6 py-3 rounded-full text-sm font-bold mb-6">
                   <span className="text-xl">📅</span>
                   SCHEDULE YOUR SESSION
                 </div>
-                <h2 className="text-4xl md:text-5xl font-extrabold mb-4 text-gray-900">
+                <h2 className="text-4xl md:text-5xl font-extrabold mb-4 text-primary">
                   {landing_page.cta_section.headline}
                 </h2>
-                <div className="w-32 h-1.5 bg-gradient-to-r from-teal-600 via-cyan-600 to-amber-500 mx-auto rounded-full"></div>
+                <div className="w-32 h-1.5 bg-primary mx-auto rounded-full"></div>
               </div>
 
               <form className="space-y-6" onSubmit={handleSubmit}>
@@ -608,7 +608,7 @@ const Consultation: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white px-8 py-5 rounded-xl text-lg font-bold transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-teal-500/50 mt-8 group"
+                  className="w-full bg-primary text-white px-8 py-5 rounded-xl text-lg font-bold transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-teal-500/50 mt-8 group"
                 >
                   {landing_page.cta_section.cta_button}
                   <span className="inline-block ml-2 group-hover:translate-x-1 transition-transform">

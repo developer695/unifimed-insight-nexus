@@ -31,6 +31,8 @@ import Assessment from './pages/Assessment';
 import Audit from './pages/Audit';
 import Consultation from './pages/Consultation';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import LandingPages from './pages/LandingPages';
+import EditLandingPage from './pages/EditLandingPage';
 declare global {
   interface Window {
     dataLayer: any[];
@@ -96,12 +98,16 @@ const App = () => {
               <Route path='analytics' element={<Analytics />} />
               <Route path='roi' element={<CostROI />} />
               <Route path='system-health' element={<SystemHealth />} />
+              <Route path='landing-pages' element={<LandingPages />} />
+              
+        <Route path="/edit/:id" element={<EditLandingPage />} />
             </Route>
 
             {/* Landing Routes */}
             <Route path='/assessment' element={<Assessment />} />
             <Route path='/audit' element={<Audit />} />
             <Route path='/consultation' element={<Consultation />} />
+            
 
             {/* 404 */}
             <Route path='*' element={<NotFound />} />

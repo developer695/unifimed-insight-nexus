@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
+import { LabelWithTooltip } from "../LabelWithTooltip";
 
 interface GoogleAdsEditModalProps {
     ad: AdVariation | null;
@@ -215,11 +216,21 @@ export function GoogleAdsEditModal({
                     <div className="space-y-6">
                         {/* Campaign Details */}
                         <div className="space-y-4 p-4 border rounded-lg">
-                            <h3 className="font-semibold text-lg">Campaign Information</h3>
+                            <div className="flex items-center justify-between">
+                                <h3 className="font-semibold text-lg">Campaign Information</h3>
+                                <LabelWithTooltip
+                                    label=""
+                                    tooltipContent="Basic information about your Google Ads campaign"
+                                    iconClassName="h-4 w-4"
+                                />
+                            </div>
 
                             <div className="space-y-3">
                                 <div className="space-y-2">
-                                    <Label htmlFor="campaign_name">Campaign Name</Label>
+                                    <LabelWithTooltip
+                                        label="Campaign Name"
+                                        tooltipContent="The name of your Google Ads campaign. This is how you'll identify it in reports."
+                                    />
                                     {isEditing ? (
                                         <Input
                                             id="campaign_name"
@@ -236,7 +247,10 @@ export function GoogleAdsEditModal({
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="campaign_id">Campaign ID</Label>
+                                    <LabelWithTooltip
+                                        label="Campaign ID"
+                                        tooltipContent="Unique identifier assigned by Google Ads to this campaign."
+                                    />
                                     <div className="flex items-center gap-2">
                                         <Hash className="h-4 w-4 text-muted-foreground" />
                                         <code className="text-xs bg-muted px-2 py-1 rounded">{currentAd.campaign_id || 'N/A'}</code>
@@ -244,7 +258,10 @@ export function GoogleAdsEditModal({
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="ad_group_name">Ad Group Name</Label>
+                                    <LabelWithTooltip
+                                        label="Ad Group Name"
+                                        tooltipContent="The ad group contains your ads and keywords. You can have multiple ad groups in a campaign."
+                                    />
                                     {isEditing ? (
                                         <Input
                                             id="ad_group_name"
@@ -261,7 +278,10 @@ export function GoogleAdsEditModal({
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label>Submitted By</Label>
+                                    <LabelWithTooltip
+                                        label="Submitted By"
+                                        tooltipContent="The team member who submitted this campaign for approval."
+                                    />
                                     <div className="flex items-center gap-2">
                                         <User className="h-4 w-4 text-muted-foreground" />
                                         <div className="font-medium">{currentAd.submitted_by}</div>
@@ -272,11 +292,21 @@ export function GoogleAdsEditModal({
 
                         {/* Budget and URL */}
                         <div className="space-y-4 p-4 border rounded-lg">
-                            <h3 className="font-semibold text-lg">Budget & URL</h3>
+                            <div className="flex items-center justify-between">
+                                <h3 className="font-semibold text-lg">Budget & URL</h3>
+                                <LabelWithTooltip
+                                    label=""
+                                    tooltipContent="Financial settings and destination URL for your campaign"
+                                    iconClassName="h-4 w-4"
+                                />
+                            </div>
 
                             <div className="space-y-3">
                                 <div className="space-y-2">
-                                    <Label htmlFor="budget">Budget</Label>
+                                    <LabelWithTooltip
+                                        label="Budget"
+                                        tooltipContent="Daily budget for this campaign in USD. Google will optimize spend to stay within this limit."
+                                    />
                                     {isEditing ? (
                                         <Input
                                             id="budget"
@@ -296,7 +326,10 @@ export function GoogleAdsEditModal({
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="ads_url">Landing Page URL</Label>
+                                    <LabelWithTooltip
+                                        label="Landing Page URL"
+                                        tooltipContent="The webpage people will see when they click your ad. Should be relevant to your ad content."
+                                    />
                                     {isEditing ? (
                                         <Input
                                             id="ads_url"
@@ -324,7 +357,10 @@ export function GoogleAdsEditModal({
 
                                 {currentAd.ad_id && (
                                     <div className="space-y-2">
-                                        <Label>Ad ID</Label>
+                                        <LabelWithTooltip
+                                            label="Ad ID"
+                                            tooltipContent="Unique identifier for this specific ad variation."
+                                        />
                                         <div className="flex items-center gap-2">
                                             <Hash className="h-4 w-4 text-muted-foreground" />
                                             <code className="text-xs bg-muted px-2 py-1 rounded">{currentAd.ad_id}</code>
@@ -341,19 +377,26 @@ export function GoogleAdsEditModal({
                                     <Tag className="h-4 w-4 text-muted-foreground" />
                                     <h3 className="font-semibold text-lg">Keywords</h3>
                                 </div>
-                                {isEditing && (
-                                    <div className="flex gap-2">
-                                        <Input
-                                            value={newKeyword}
-                                            onChange={(e) => setNewKeyword(e.target.value)}
-                                            placeholder="Add new keyword"
-                                            className="w-40"
-                                        />
-                                        <Button size="sm" onClick={handleAddKeyword}>
-                                            <Plus className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                )}
+                                <div className="flex items-center gap-2">
+                                    <LabelWithTooltip
+                                        label=""
+                                        tooltipContent="Words or phrases that trigger your ads to show. Use relevant keywords to reach the right audience."
+                                        iconClassName="h-4 w-4"
+                                    />
+                                    {isEditing && (
+                                        <div className="flex gap-2">
+                                            <Input
+                                                value={newKeyword}
+                                                onChange={(e) => setNewKeyword(e.target.value)}
+                                                placeholder="Add new keyword"
+                                                className="w-40"
+                                            />
+                                            <Button size="sm" onClick={handleAddKeyword}>
+                                                <Plus className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 {currentAd.keywords.map((keyword, index) => (
@@ -386,19 +429,26 @@ export function GoogleAdsEditModal({
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <h3 className="font-semibold text-lg">Headlines</h3>
-                                {isEditing && (
-                                    <div className="flex gap-2">
-                                        <Input
-                                            value={newHeadline}
-                                            onChange={(e) => setNewHeadline(e.target.value)}
-                                            placeholder="Add new headline"
-                                            className="w-40"
-                                        />
-                                        <Button size="sm" onClick={handleAddHeadline}>
-                                            <Plus className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                )}
+                                <div className="flex items-center gap-2">
+                                    <LabelWithTooltip
+                                        label=""
+                                        tooltipContent="The main text that appears in your ad. Up to 15 headlines can be used in responsive search ads."
+                                        iconClassName="h-4 w-4"
+                                    />
+                                    {isEditing && (
+                                        <div className="flex gap-2">
+                                            <Input
+                                                value={newHeadline}
+                                                onChange={(e) => setNewHeadline(e.target.value)}
+                                                placeholder="Add new headline"
+                                                className="w-40"
+                                            />
+                                            <Button size="sm" onClick={handleAddHeadline}>
+                                                <Plus className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             <div className="grid grid-cols-1 gap-3">
                                 {currentAd.headlines.map((headline, index) => (
@@ -438,19 +488,26 @@ export function GoogleAdsEditModal({
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <h3 className="font-semibold text-lg">Descriptions</h3>
-                                {isEditing && (
-                                    <div className="flex gap-2">
-                                        <Input
-                                            value={newDescription}
-                                            onChange={(e) => setNewDescription(e.target.value)}
-                                            placeholder="Add new description"
-                                            className="w-40"
-                                        />
-                                        <Button size="sm" onClick={handleAddDescription}>
-                                            <Plus className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                )}
+                                <div className="flex items-center gap-2">
+                                    <LabelWithTooltip
+                                        label=""
+                                        tooltipContent="Additional text that provides more details about your offer. Up to 4 descriptions can be used."
+                                        iconClassName="h-4 w-4"
+                                    />
+                                    {isEditing && (
+                                        <div className="flex gap-2">
+                                            <Input
+                                                value={newDescription}
+                                                onChange={(e) => setNewDescription(e.target.value)}
+                                                placeholder="Add new description"
+                                                className="w-40"
+                                            />
+                                            <Button size="sm" onClick={handleAddDescription}>
+                                                <Plus className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             <div className="grid grid-cols-1 gap-3">
                                 {currentAd.descriptions.map((description, index) => (
@@ -492,24 +549,43 @@ export function GoogleAdsEditModal({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t">
                     {/* Status Information */}
                     <div className="space-y-4">
-                        <h3 className="font-semibold text-lg">Campaign Status</h3>
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-semibold text-lg">Campaign Status</h3>
+                            <LabelWithTooltip
+                                label=""
+                                tooltipContent="Current operational state of the campaign: PENDING, APPROVED, ACTIVE, PAUSED, or DELETED."
+                                iconClassName="h-4 w-4"
+                            />
+                        </div>
                         <div className="space-y-3">
                             <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                <span className="font-medium">Current Status</span>
+                                <LabelWithTooltip
+                                    label="Current Status"
+                                    tooltipContent="The current operational state of the campaign"
+                                    className="font-medium"
+                                />
                                 <Badge className={getStatusColor(currentAd.status)}>
                                     {currentAd.status}
                                 </Badge>
                             </div>
 
                             <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                <span className="font-medium">Created</span>
+                                <LabelWithTooltip
+                                    label="Created"
+                                    tooltipContent="Date and time when this campaign was first created in the system."
+                                    className="font-medium"
+                                />
                                 <span className="text-sm text-muted-foreground">
                                     {formatDate(currentAd.created_at)}
                                 </span>
                             </div>
 
                             <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                <span className="font-medium">Last Updated</span>
+                                <LabelWithTooltip
+                                    label="Last Updated"
+                                    tooltipContent="Date and time when this campaign was last modified."
+                                    className="font-medium"
+                                />
                                 <span className="text-sm text-muted-foreground">
                                     {formatDate(currentAd.updated_at)}
                                 </span>
@@ -519,10 +595,21 @@ export function GoogleAdsEditModal({
 
                     {/* Approval Information */}
                     <div className="space-y-4">
-                        <h3 className="font-semibold text-lg">Approval Status</h3>
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-semibold text-lg">Approval Status</h3>
+                            <LabelWithTooltip
+                                label=""
+                                tooltipContent="Approval workflow status: PENDING, APPROVED, REJECTED, or CANCELLED."
+                                iconClassName="h-4 w-4"
+                            />
+                        </div>
                         <div className="space-y-3">
                             <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                <span className="font-medium">Approval Status</span>
+                                <LabelWithTooltip
+                                    label="Approval Status"
+                                    tooltipContent="The current approval workflow status"
+                                    className="font-medium"
+                                />
                                 <Badge variant="outline" className={getApprovalStatusColor(currentAd.approval_status)}>
                                     {currentAd.approval_status}
                                 </Badge>
@@ -530,20 +617,25 @@ export function GoogleAdsEditModal({
 
                             {currentAd.approved_by && (
                                 <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                    <span className="flex items-center gap-2 font-medium">
-                                        <User className="h-4 w-4" />
-                                        Approved By
-                                    </span>
+                                    <LabelWithTooltip
+                                        label={
+                                            ' Approved By'}
+                                        tooltipContent="Team member who approved this campaign."
+                                        className="font-medium"
+                                    />
                                     <span className="text-sm font-medium">{currentAd.approved_by}</span>
                                 </div>
                             )}
 
                             {currentAd.approved_at && (
                                 <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                    <span className="flex items-center gap-2 font-medium">
-                                        <Calendar className="h-4 w-4" />
-                                        Approved At
-                                    </span>
+                                    <LabelWithTooltip
+                                        label={
+                                            'Approved At'
+                                        }
+                                        tooltipContent="Date and time when this campaign was approved."
+                                        className="font-medium"
+                                    />
                                     <span className="text-sm text-muted-foreground">
                                         {formatDate(currentAd.approved_at)}
                                     </span>
@@ -638,7 +730,7 @@ export function GoogleAdsEditModal({
                                                 Resume Campaign
                                             </Button>
                                         )}
-                                        {currentAd.status !== 'DELETED' && onDelete && (
+                                        {currentAd.status as string !== 'DELETED' && onDelete && (
                                             <Button
                                                 variant="destructive"
                                                 onClick={() => onDelete(currentAd)}

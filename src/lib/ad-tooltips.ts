@@ -1,0 +1,18 @@
+export const adTooltips = {
+    campaignName: "The name of your Google Ads campaign. This is how you'll identify it in reports.",
+    campaignId: "Unique identifier assigned by Google Ads to this campaign.",
+    adGroupName: "The ad group contains your ads and keywords. You can have multiple ad groups in a campaign.",
+    submittedBy: "The team member who submitted this campaign for approval.",
+    budget: "Daily budget for this campaign in USD. Google will optimize spend to stay within this limit.",
+    landingPageUrl: "The webpage people will see when they click your ad. Should be relevant to your ad content.",
+    adId: "Unique identifier for this specific ad variation.",
+    keywords: "Words or phrases that trigger your ads to show. Use relevant keywords to reach the right audience.",
+    headlines: "The main text that appears in your ad. Up to 15 headlines can be used in responsive search ads.",
+    descriptions: "Additional text that provides more details about your offer. Up to 4 descriptions can be used.",
+    status: "Current operational state of the campaign: PENDING, APPROVED, ACTIVE, PAUSED, or DELETED.",
+    approvalStatus: "Approval workflow status: PENDING, APPROVED, REJECTED, or CANCELLED.",
+    created: "Date and time when this campaign was first created in the system.",
+    updated: "Date and time when this campaign was last modified.",
+    approvedBy: "Team member who approved this campaign.",
+    approvedAt: "Date and time when this campaign was approved.",
+};

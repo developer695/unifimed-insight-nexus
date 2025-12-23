@@ -236,17 +236,17 @@ const Audit: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-violet-900 via-purple-800 to-fuchsia-900 text-white py-20 md:py-28 overflow-hidden">
+      <section className="relative bg-primary text-white py-20 md:py-28 overflow-hidden">
         {/* Decorative elements */}
         <div className="absolute inset-0">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-purple-500/30 rounded-full filter blur-3xl"></div>
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-fuchsia-500/30 rounded-full filter blur-3xl"></div>
+          <div className="absolute top-0 left-0 w-96 h-96  rounded-full filter blur-3xl"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full filter blur-3xl"></div>
         </div>
 
         <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div>
-              <div className="inline-block bg-amber-400/20 backdrop-blur-sm px-4 py-2 rounded-full text-amber-300 text-sm font-semibold mb-6">
+              <div className="inline-block bg-white backdrop-blur-sm px-4 py-2 rounded-full text-primary text-sm font-semibold mb-6">
                 ✨ Professional Market Access Audit
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight">
@@ -263,7 +263,7 @@ const Audit: React.FC = () => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <a
                   href="#contact"
-                  className="group bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-amber-500/50 inline-flex items-center justify-center"
+                  className="group bg-white text-primary px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-amber-500/50 inline-flex items-center justify-center"
                   onClick={(e) => scrollToSection(e, "#contact")}
                 >
                   {landing_page.hero_section.primary_cta}
@@ -283,7 +283,7 @@ const Audit: React.FC = () => {
             {landing_page.hero_section.hero_image_url && (
               <div className="hidden md:block">
                 <div className="relative">
-                  <div className="absolute -inset-4 bg-gradient-to-r from-amber-500 to-fuchsia-500 rounded-3xl blur opacity-30"></div>
+                  <div className="absolute -inset-4 bg-gradient-to-r  to-primary rounded-3xl blur opacity-30"></div>
                   <img
                     src={landing_page.hero_section.hero_image_url}
                     alt={
@@ -303,10 +303,10 @@ const Audit: React.FC = () => {
       <section className="py-20 md:py-28 bg-white" id="learn-more">
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-purple-700 to-fuchsia-600 bg-clip-text text-transparent">
+            <h2 className="text-4xl md:text-5xl font-extrabold mb-4 bg-primary bg-clip-text text-transparent">
               The Hidden Costs of Poor Market Access Planning
             </h2>
-            <div className="w-32 h-1.5 bg-gradient-to-r from-purple-600 to-fuchsia-600 mx-auto rounded-full"></div>
+            <div className="w-32 h-1.5 bg-primary mx-auto rounded-full"></div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
@@ -315,7 +315,7 @@ const Audit: React.FC = () => {
                 <div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center">
                   <span className="text-2xl">💰</span>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900">
+                <h3 className="text-xl font-bold text-primary">
                   Revenue Impact
                 </h3>
               </div>
@@ -341,7 +341,7 @@ const Audit: React.FC = () => {
                 <div className="flex gap-4 items-start">
                   <span className="text-3xl text-red-600 flex-shrink-0">⚠</span>
                   <div>
-                    <h4 className="font-bold text-gray-900 text-lg mb-2">
+                    <h4 className="font-bold text-primary text-lg mb-2">
                       Coverage Delays
                     </h4>
                     <p className="text-gray-700 leading-relaxed">
@@ -358,7 +358,7 @@ const Audit: React.FC = () => {
                     ⚠
                   </span>
                   <div>
-                    <h4 className="font-bold text-gray-900 text-lg mb-2">
+                    <h4 className="font-bold text-primary text-lg mb-2">
                       Team Readiness
                     </h4>
                     <p className="text-gray-700 leading-relaxed">
@@ -391,10 +391,10 @@ const Audit: React.FC = () => {
                     <div
                       className={index % 2 === 0 ? "md:order-1" : "md:order-2"}
                     >
-                      <div className="inline-block bg-purple-100 text-purple-700 px-4 py-2 rounded-full text-sm font-bold mb-6">
+                      <div className="inline-block bg-primary text-white px-4 py-2 rounded-full text-sm font-bold mb-6">
                         SECTION {index + 1}
                       </div>
-                      <h2 className="text-4xl md:text-5xl font-extrabold mb-8 bg-gradient-to-r from-purple-700 to-fuchsia-600 bg-clip-text text-transparent leading-tight">
+                      <h2 className="text-4xl md:text-5xl font-extrabold mb-8 bg-primary bg-clip-text text-transparent leading-tight">
                         {section.title}
                       </h2>
                       <div className="space-y-5">
@@ -406,7 +406,7 @@ const Audit: React.FC = () => {
                               key={i}
                               className="flex gap-4 p-5 bg-white rounded-2xl border-2 border-purple-100 hover:border-purple-300 hover:shadow-xl transition-all duration-300 group"
                             >
-                              <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-600 to-fuchsia-600 rounded-xl flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform shadow-lg">
+                              <div className="flex-shrink-0 w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform shadow-lg">
                                 ✓
                               </div>
                               <div>
@@ -431,7 +431,7 @@ const Audit: React.FC = () => {
                         }
                       >
                         <div className="relative group">
-                          <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-600 rounded-3xl blur-lg opacity-25 group-hover:opacity-40 transition duration-500"></div>
+                          <div className="absolute -inset-1 bg-primary to-amber-600 rounded-3xl blur-lg opacity-25 group-hover:opacity-40 transition duration-500"></div>
                           <div className="relative">
                             <img
                               src={section.image_url}
@@ -452,9 +452,9 @@ const Audit: React.FC = () => {
       {/* Credibility Section */}
       {landing_page.credibility_section &&
         landing_page.credibility_section.points.length > 0 && (
-          <section className="relative py-20 md:py-28 bg-gradient-to-br from-purple-900 via-fuchsia-900 to-violet-900 text-white overflow-hidden">
+          <section className="relative py-20 md:py-28 bg-primary text-white overflow-hidden">
             <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 left-1/4 w-96 h-96 bg-fuchsia-500 rounded-full filter blur-3xl"></div>
+              <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary filter blur-3xl"></div>
               <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500 rounded-full filter blur-3xl"></div>
             </div>
             {landing_page.credibility_section.background_image_url && (
@@ -566,24 +566,24 @@ const Audit: React.FC = () => {
       {/* CTA Form Section */}
       {landing_page.cta_section && (
         <section
-          className="relative py-20 md:py-28 bg-gradient-to-br from-slate-900 via-purple-900 to-fuchsia-900 overflow-hidden"
+          className="relative py-20 md:py-28 bg-primary overflow-hidden"
           id="contact"
         >
           <div className="absolute inset-0">
-            <div className="absolute top-0 right-1/4 w-96 h-96 bg-fuchsia-500/20 rounded-full filter blur-3xl animate-pulse"></div>
-            <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
+            <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/20 rounded-full filter blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
           </div>
 
           <div className="max-w-4xl mx-auto px-6 lg:px-8 relative z-10">
             <div className="bg-white/95 backdrop-blur-xl p-10 md:p-14 rounded-3xl shadow-2xl border border-white/20">
               <div className="text-center mb-12">
-                <div className="inline-block bg-gradient-to-r from-purple-100 to-fuchsia-100 text-purple-700 px-6 py-2 rounded-full text-sm font-bold mb-6">
+                <div className="inline-block bg-primary text-white px-6 py-2 rounded-full text-sm font-bold mb-6">
                   🚀 GET STARTED TODAY
                 </div>
-                <h2 className="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-purple-700 to-fuchsia-600 bg-clip-text text-transparent">
+                <h2 className="text-4xl md:text-5xl font-extrabold mb-4 bg-primary bg-clip-text text-transparent">
                   {landing_page.cta_section.headline}
                 </h2>
-                <div className="w-32 h-1.5 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 mx-auto rounded-full"></div>
+                <div className="w-32 h-1.5 bg-primary mx-auto rounded-full"></div>
               </div>
 
               <form className="space-y-6" onSubmit={handleSubmit}>
@@ -749,7 +749,7 @@ const Audit: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-8 py-5 rounded-xl text-lg font-bold transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/50 mt-8 group"
+                  className="w-full bg-primary text-white px-8 py-5 rounded-xl text-lg font-bold transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/50 mt-8 group"
                 >
                   {landing_page.cta_section.cta_button}
                   <span className="inline-block ml-2 group-hover:translate-x-1 transition-transform">
