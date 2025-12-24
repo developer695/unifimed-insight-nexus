@@ -11,7 +11,7 @@ interface LandingPageData {
       hero_image_alt_text?: string;
       primary_cta: string;
     };
-    value_sections?: Array<{
+    value_section_body?: Array<{
       title: string;
       body: string;
       image_url?: string;
@@ -73,7 +73,7 @@ const Consultation: React.FC = () => {
 
       if (data) {
         console.log("Raw data from Supabase:", data);
-        console.log("value_sections:", data.value_sections);
+        console.log("value_section_body:", data.value_section_body);
         console.log("credibility_points:", data.credibility_points);
         console.log("process_steps:", data.process_steps);
 
@@ -87,8 +87,8 @@ const Consultation: React.FC = () => {
               hero_image_alt_text: data.hero_image_alt_text,
               primary_cta: data.hero_primary_cta,
             },
-            value_sections: Array.isArray(data.value_sections)
-              ? data.value_sections
+            value_section_body: Array.isArray(data.value_section_body)
+              ? data.value_section_body
               : [],
             credibility_section: data.credibility_title
               ? {
@@ -300,14 +300,14 @@ const Consultation: React.FC = () => {
       </section>
 
 
-      {landing_page.value_sections &&
-        landing_page.value_sections.length > 0 &&
-        landing_page.value_sections[0] && (
+      {landing_page?.value_section_body &&
+        landing_page.value_section_body.length > 0 &&
+        landing_page.value_section_body[0] && (
           <section className="py-16 md:py-20 bg-white">
             <div className="max-w-5xl mx-auto px-6 lg:px-8 text-center">
               <div className="bg-white/80 backdrop-blur-sm p-10 md:p-12 rounded-3xl shadow-xl border-2 border-primary/30">
                 <p className="text-xl md:text-2xl text-gray-800 leading-relaxed font-medium">
-                  {landing_page.value_sections[0].body}
+                  {landing_page.value_section_body[0].body}
                 </p>
               </div>
             </div>
@@ -315,20 +315,20 @@ const Consultation: React.FC = () => {
         )}
 
 
-      {landing_page.value_sections &&
-        landing_page.value_sections.length > 1 &&
-        landing_page.value_sections[1] && (
+      {landing_page.value_section_body &&
+        landing_page.value_section_body.length > 1 &&
+        landing_page.value_section_body[1] && (
           <section className="py-20 md:py-28 bg-white">
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
               <div className="text-center mb-16">
                 <h2 className="text-4xl md:text-5xl font-extrabold mb-4 text-primary">
-                  {landing_page.value_sections[1].title}
+                  {landing_page.value_section_body[1].title}
                 </h2>
                 <div className="w-32 h-1.5 bg-gradient-to-r from-red-500 to-orange-500 mx-auto rounded-full"></div>
               </div>
 
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {landing_page.value_sections[1].body
+                {landing_page.value_section_body[1].body
                   .split("\n")
                   .map((item, index) => (
                     <div
@@ -348,7 +348,7 @@ const Consultation: React.FC = () => {
           </section>
         )}
 
-      {/* What the Consultation Covers Section */}
+   
       {landing_page.credibility_section &&
         landing_page.credibility_section.points.length > 0 && (
           <section className="py-20 md:py-28 bg-gradient-to-br from-gray-50 to-teal-50">
@@ -426,7 +426,7 @@ const Consultation: React.FC = () => {
           </section>
         )}
 
-      {/* CTA Form Section */}
+    
       {landing_page.cta_section && (
         <section
           className="relative py-20 md:py-28 bg-primary overflow-hidden"
