@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 const EditLandingPage = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // Get slug from URL params
+  const { id } = useParams();
   
   const [formData, setFormData] = useState({
     id: '',
@@ -18,29 +18,33 @@ const EditLandingPage = () => {
     hero_image_url: '',
     hero_image_alt_text: '',
     hero_primary_cta: '',
-    value_section_title: '',
-    value_section_body: '',
-    value_image_url: '',
-    value_image_alt: '',
+    value_sections: [],
     credibility_title: '',
     credibility_background_image_url: '',
     credibility_background_image_alt_text: '',
+    credibility_points: [],
     process_title: '',
+    process_steps: [],
     process_diagram_image_url: '',
     process_diagram_image_alt_text: '',
     cta_headline: '',
     cta_button_text: '',
     cta_background_image_url: '',
     cta_background_image_alt_text: '',
+    // Legacy text fields (still in schema)
+    value_section_title: '',
+    value_section_body: '',
+    value_image_url: '',
+    value_image_alt: '',
   });
   
+  const [dbData, setDbData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    console.log("ID from URL:", id); // Debug log
     if (id) {
       fetchLandingPage();
     } else {
@@ -52,27 +56,34 @@ const EditLandingPage = () => {
   const fetchLandingPage = async () => {
     try {
       setLoading(true);
-      console.log("Fetching landing page with slug:", id); // Debug log
       
-      // ✅ FETCH BY SLUG instead of ID
       const { data, error } = await supabase
         .from('Landing_Pages_Enrichment')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (error) {
-        console.error("Error fetching landing page:", error);
-        setError(error.message);
-      } else if (data) {
-        console.log("Fetched data:", data); // Debug log
-        setFormData(data);
+      if (error) throw error;
+
+      if (data) {
+        console.log("✅ Fetched data from DB:", data);
+        
+        // Ensure arrays are properly initialized
+        const processedData = {
+          ...data,
+          value_sections: Array.isArray(data.value_sections) ? data.value_sections : [],
+          credibility_points: Array.isArray(data.credibility_points) ? data.credibility_points : [],
+          process_steps: Array.isArray(data.process_steps) ? data.process_steps : [],
+        };
+        
+        setDbData(processedData);
+        setFormData(processedData);
       } else {
-        setError("No landing page found with this slug");
+        setError("No landing page found with this ID");
       }
     } catch (err) {
-      console.error("Unexpected error:", err);
-      setError("An unexpected error occurred");
+      console.error("Error:", err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -86,89 +97,158 @@ const EditLandingPage = () => {
     }));
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  try {
-    setSaving(true);
-    setError(null);
-    setSuccess(false);
+  // Handle value_sections (JSONB array)
+  const handleValueSectionChange = (index, field, value) => {
+    setFormData(prev => {
+      const newSections = [...prev.value_sections];
+      newSections[index] = { ...newSections[index], [field]: value };
+      return { ...prev, value_sections: newSections };
+    });
+  };
 
-    console.log("🚀 Attempting update for ID:", formData.id);
-    console.log("📦 Update payload:", formData);
+  const addValueSection = () => {
+    setFormData(prev => ({
+      ...prev,
+      value_sections: [...prev.value_sections, { title: '', body: '', image_url: '', image_alt_text: '' }]
+    }));
+  };
 
-    // ✅ FIXED: Removed updated_at, added .select()
-    const { data, error } = await supabase
-      .from('Landing_Pages_Enrichment')
-      .update({
+  const removeValueSection = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      value_sections: prev.value_sections.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Handle credibility_points (JSONB array of strings)
+  const handleCredibilityPointChange = (index, value) => {
+    setFormData(prev => {
+      const newPoints = [...prev.credibility_points];
+      newPoints[index] = value;
+      return { ...prev, credibility_points: newPoints };
+    });
+  };
+
+  const addCredibilityPoint = () => {
+    setFormData(prev => ({
+      ...prev,
+      credibility_points: [...prev.credibility_points, '']
+    }));
+  };
+
+  const removeCredibilityPoint = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      credibility_points: prev.credibility_points.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Handle process_steps (JSONB array of strings)
+  const handleProcessStepChange = (index, value) => {
+    setFormData(prev => {
+      const newSteps = [...prev.process_steps];
+      newSteps[index] = value;
+      return { ...prev, process_steps: newSteps };
+    });
+  };
+
+  const addProcessStep = () => {
+    setFormData(prev => ({
+      ...prev,
+      process_steps: [...prev.process_steps, '']
+    }));
+  };
+
+  const removeProcessStep = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      process_steps: prev.process_steps.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      setSaving(true);
+      setError(null);
+      setSuccess(false);
+
+      console.log("🚀 Attempting update for ID:", formData.id);
+
+      const updatePayload = {
         slug: formData.slug,
         page_title: formData.page_title,
-        meta_description: formData.meta_description,
+        meta_description: formData.meta_description || null,
         is_active: formData.is_active,
         hero_headline: formData.hero_headline,
         hero_subheadline: formData.hero_subheadline,
-        hero_supporting_text: formData.hero_supporting_text,
-        hero_image_url: formData.hero_image_url,
-        hero_image_alt_text: formData.hero_image_alt_text,
+        hero_supporting_text: formData.hero_supporting_text || null,
+        hero_image_url: formData.hero_image_url || null,
+        hero_image_alt_text: formData.hero_image_alt_text || null,
         hero_primary_cta: formData.hero_primary_cta,
-        value_section_title: formData.value_section_title,
-        value_section_body: formData.value_section_body,
-        value_image_url: formData.value_image_url,
-        value_image_alt: formData.value_image_alt,
+        value_sections: formData.value_sections,
         credibility_title: formData.credibility_title,
-        credibility_background_image_url: formData.credibility_background_image_url,
-        credibility_background_image_alt_text: formData.credibility_background_image_alt_text,
+        credibility_background_image_url: formData.credibility_background_image_url || null,
+        credibility_background_image_alt_text: formData.credibility_background_image_alt_text || null,
+        credibility_points: formData.credibility_points,
         process_title: formData.process_title,
-        process_diagram_image_url: formData.process_diagram_image_url,
-        process_diagram_image_alt_text: formData.process_diagram_image_alt_text,
+        process_steps: formData.process_steps,
+        process_diagram_image_url: formData.process_diagram_image_url || null,
+        process_diagram_image_alt_text: formData.process_diagram_image_alt_text || null,
         cta_headline: formData.cta_headline,
         cta_button_text: formData.cta_button_text,
-        cta_background_image_url: formData.cta_background_image_url,
-        cta_background_image_alt_text: formData.cta_background_image_alt_text,
-        // ❌ REMOVED: updated_at - let trigger handle it
-      })
-      .eq('id', formData.id)
-      .select(); // ✅ ADDED: Get updated row back
+        cta_background_image_url: formData.cta_background_image_url || null,
+        cta_background_image_alt_text: formData.cta_background_image_alt_text || null,
+        // Legacy fields
+        value_section_title: formData.value_section_title || null,
+        value_section_body: formData.value_section_body || null,
+        value_image_url: formData.value_image_url || null,
+        value_image_alt: formData.value_image_alt || null,
+      };
 
-    console.log("📥 Supabase response:", { data, error });
+      console.log("📦 Update payload:", updatePayload);
 
-    if (error) {
-      console.error("❌ Update failed:", error);
-      setError(`Update failed: ${error.message} (Code: ${error.code}, Details: ${error.details})`);
-      return; // ⬅️ IMPORTANT: Stop execution
+      const { data, error } = await supabase
+        .from('Landing_Pages_Enrichment')
+        .update(updatePayload)
+        .eq('id', formData.id)
+        .select();
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        throw new Error("No data returned. Check RLS policies.");
+      }
+
+      console.log("✅ Successfully updated:", data);
+      setSuccess(true);
+      setDbData(data[0]);
+      
+      setTimeout(() => {
+        navigate('/landing-pages');
+      }, 1500);
+      
+    } catch (err) {
+      console.error("❌ Update failed:", err);
+      setError(err.message);
+    } finally {
+      setSaving(false);
     }
-
-    if (!data || data.length === 0) {
-      console.error("⚠️ No data returned - update may have been blocked by RLS");
-      setError("Update failed: No data returned. Check RLS policies.");
-      return;
-    }
-
-    console.log("✅ Successfully updated:", data);
-    setSuccess(true);
-    
-    // Redirect after 1.5 seconds
-    setTimeout(() => {
-      navigate('/landing-pages');
-    }, 1500);
-    
-  } catch (err) {
-    console.error("💥 Unexpected error:", err);
-    setError(`Unexpected error: ${err.message}`);
-  } finally {
-    setSaving(false);
-  }
-};
+  };
 
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <p className="text-center text-lg">Loading page data...</p>
+        <div className="flex flex-col items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-center text-lg text-gray-600">Loading page data...</p>
+        </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error && !dbData) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
@@ -176,7 +256,7 @@ const handleSubmit = async (e) => {
           <p>{error}</p>
           <button 
             onClick={() => navigate('/landing-pages')}
-            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded"
+            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
             Back to Landing Pages
           </button>
@@ -186,46 +266,68 @@ const handleSubmit = async (e) => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 py-8 max-w-5xl">
       <div className="mb-4">
         <button 
           onClick={() => navigate('/landing-pages')}
-          className="text-blue-600 hover:text-blue-800 font-medium"
+          className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2"
         >
           ← Back to Landing Pages
         </button>
       </div>
 
-      <h1 className="text-4xl font-bold mb-8">Edit Landing Page: {formData.page_title}</h1>
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold mb-2">Edit Landing Page</h1>
+        {dbData && (
+          <div className="bg-gray-100 p-4 rounded-lg mt-4">
+            <h3 className="font-semibold text-sm text-gray-600 mb-2">Current Database Values:</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div><span className="font-medium">Page Title:</span> {dbData.page_title}</div>
+              <div><span className="font-medium">Slug:</span> {dbData.slug}</div>
+              <div><span className="font-medium">Status:</span> {dbData.is_active ? '✅ Active' : '❌ Inactive'}</div>
+              <div><span className="font-medium">Last Updated:</span> {new Date(dbData.updated_at).toLocaleString()}</div>
+            </div>
+          </div>
+        )}
+      </div>
       
       {success && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 sticky top-0 z-50">
           ✅ Successfully updated! Redirecting...
+        </div>
+      )}
+
+      {error && dbData && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 sticky top-0 z-50">
+          ❌ {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
         
         {/* ========== GENERAL SETTINGS ========== */}
-        <div className="bg-gray-50 p-6 rounded-lg">
+        {/* <div className="bg-gray-50 p-6 rounded-lg border-2 border-gray-200">
           <h2 className="text-2xl font-bold mb-4 text-gray-800">General Settings</h2>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Slug (URL Path)</label>
+              <label className="block text-sm font-medium mb-2">
+                Slug (URL Path) <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 name="slug"
                 value={formData.slug}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., assessment, audit, consultation"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Page Title</label>
+              <label className="block text-sm font-medium mb-2">
+                Page Title <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 name="page_title"
@@ -244,7 +346,6 @@ const handleSubmit = async (e) => {
                 onChange={handleChange}
                 rows={3}
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Description for search engines"
               />
             </div>
 
@@ -256,18 +357,22 @@ const handleSubmit = async (e) => {
                 onChange={handleChange}
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <label className="ml-2 text-sm font-medium">Page is Active</label>
+              <label className="ml-2 text-sm font-medium">
+                Page is Active {formData.is_active ? '✅' : '⚠️'}
+              </label>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* ========== HERO SECTION ========== */}
-        <div className="bg-blue-50 p-6 rounded-lg">
+        <div className="bg-blue-50 p-6 rounded-lg border-2 border-blue-200">
           <h2 className="text-2xl font-bold mb-4 text-blue-800">Hero Section</h2>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Hero Headline</label>
+              <label className="block text-sm font-medium mb-2">
+                Hero Headline <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 name="hero_headline"
@@ -279,7 +384,9 @@ const handleSubmit = async (e) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Hero Subheadline</label>
+              <label className="block text-sm font-medium mb-2">
+                Hero Subheadline <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 name="hero_subheadline"
@@ -302,7 +409,9 @@ const handleSubmit = async (e) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Hero Primary CTA</label>
+              <label className="block text-sm font-medium mb-2">
+                Hero Primary CTA <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 name="hero_primary_cta"
@@ -322,6 +431,14 @@ const handleSubmit = async (e) => {
                 onChange={handleChange}
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
               />
+              {formData.hero_image_url && (
+                <img 
+                  src={formData.hero_image_url} 
+                  alt="Hero preview" 
+                  className="mt-2 max-h-32 rounded border"
+                  onError={(e) => e.target.src = 'https://via.placeholder.com/400x200?text=Image+Not+Found'}
+                />
+              )}
             </div>
 
             <div>
@@ -337,64 +454,139 @@ const handleSubmit = async (e) => {
           </div>
         </div>
 
-        {/* ========== VALUE SECTION ========== */}
-        <div className="bg-green-50 p-6 rounded-lg">
-          <h2 className="text-2xl font-bold mb-4 text-green-800">Value Section</h2>
+        {/* ========== VALUE SECTIONS (JSONB ARRAY) ========== */}
+        <div className="bg-green-50 p-6 rounded-lg border-2 border-green-200">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-green-800">Value Sections</h2>
+            <button
+              type="button"
+              onClick={addValueSection}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium"
+            >
+              + Add Section
+            </button>
+          </div>
           
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Value Section Title</label>
-              <input
-                type="text"
-                name="value_section_title"
-                value={formData.value_section_title || ''}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
+          {formData.value_sections.length === 0 ? (
+            <p className="text-gray-600 italic">No value sections yet. Click "Add Section" to create one.</p>
+          ) : (
+            <div className="space-y-6">
+              {formData.value_sections.map((section, index) => (
+                <div key={index} className="bg-white p-4 rounded-lg border-2 border-green-300">
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-bold text-lg">Section {index + 1}</h3>
+                    <button
+                      type="button"
+                      onClick={() => removeValueSection(index)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Title</label>
+                      <input
+                        type="text"
+                        value={section.title || ''}
+                        onChange={(e) => handleValueSectionChange(index, 'title', e.target.value)}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Body</label>
+                      <textarea
+                        value={section.body || ''}
+                        onChange={(e) => handleValueSectionChange(index, 'body', e.target.value)}
+                        rows={3}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Image URL</label>
+                      <input
+                        type="url"
+                        value={section.image_url || ''}
+                        onChange={(e) => handleValueSectionChange(index, 'image_url', e.target.value)}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Image Alt Text</label>
+                      <input
+                        type="text"
+                        value={section.image_alt_text || ''}
+                        onChange={(e) => handleValueSectionChange(index, 'image_alt_text', e.target.value)}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
+          )}
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Value Section Body</label>
-              <textarea
-                name="value_section_body"
-                value={formData.value_section_body || ''}
-                onChange={handleChange}
-                rows={4}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Value Image URL</label>
-              <input
-                type="url"
-                name="value_image_url"
-                value={formData.value_image_url || ''}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Value Image Alt Text</label>
-              <input
-                type="text"
-                name="value_image_alt"
-                value={formData.value_image_alt || ''}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
+          {/* Legacy Text Fields */}
+          <div className="mt-6 pt-6 border-t-2 border-green-300">
+            <h3 className="font-bold text-lg mb-3 text-green-800">Legacy Text Fields</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Value Section Title (Text)</label>
+                <input
+                  type="text"
+                  name="value_section_title"
+                  value={formData.value_section_title || ''}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Value Section Body (Text)</label>
+                <textarea
+                  name="value_section_body"
+                  value={formData.value_section_body || ''}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Value Image URL</label>
+                <input
+                  type="url"
+                  name="value_image_url"
+                  value={formData.value_image_url || ''}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Value Image Alt</label>
+                <input
+                  type="text"
+                  name="value_image_alt"
+                  value={formData.value_image_alt || ''}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                />
+              </div>
             </div>
           </div>
         </div>
 
         {/* ========== CREDIBILITY SECTION ========== */}
-        <div className="bg-purple-50 p-6 rounded-lg">
+        <div className="bg-purple-50 p-6 rounded-lg border-2 border-purple-200">
           <h2 className="text-2xl font-bold mb-4 text-purple-800">Credibility Section</h2>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Credibility Title</label>
+              <label className="block text-sm font-medium mb-2">
+                Credibility Title <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 name="credibility_title"
@@ -426,16 +618,57 @@ const handleSubmit = async (e) => {
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
+
+            {/* Credibility Points Array */}
+            <div className="mt-4">
+              <div className="flex justify-between items-center mb-3">
+                <label className="block text-sm font-medium">Credibility Points</label>
+                <button
+                  type="button"
+                  onClick={addCredibilityPoint}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
+                >
+                  + Add Point
+                </button>
+              </div>
+              
+              {formData.credibility_points.length === 0 ? (
+                <p className="text-gray-600 italic text-sm">No points yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {formData.credibility_points.map((point, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={point}
+                        onChange={(e) => handleCredibilityPointChange(index, e.target.value)}
+                        className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                        placeholder={`Point ${index + 1}`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeCredibilityPoint(index)}
+                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* ========== PROCESS SECTION ========== */}
-        <div className="bg-yellow-50 p-6 rounded-lg">
+        <div className="bg-yellow-50 p-6 rounded-lg border-2 border-yellow-200">
           <h2 className="text-2xl font-bold mb-4 text-yellow-800">Process Section</h2>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Process Title</label>
+              <label className="block text-sm font-medium mb-2">
+                Process Title <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 name="process_title"
@@ -467,16 +700,57 @@ const handleSubmit = async (e) => {
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
+
+            {/* Process Steps Array */}
+            <div className="mt-4">
+              <div className="flex justify-between items-center mb-3">
+                <label className="block text-sm font-medium">Process Steps</label>
+                <button
+                  type="button"
+                  onClick={addProcessStep}
+                  className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm"
+                >
+                  + Add Step
+                </button>
+              </div>
+              
+              {formData.process_steps.length === 0 ? (
+                <p className="text-gray-600 italic text-sm">No steps yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {formData.process_steps.map((step, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={step}
+                        onChange={(e) => handleProcessStepChange(index, e.target.value)}
+                        className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
+                        placeholder={`Step ${index + 1}`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeProcessStep(index)}
+                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* ========== CTA SECTION ========== */}
-        <div className="bg-red-50 p-6 rounded-lg">
+        <div className="bg-red-50 p-6 rounded-lg border-2 border-red-200">
           <h2 className="text-2xl font-bold mb-4 text-red-800">Call-to-Action Section</h2>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">CTA Headline</label>
+              <label className="block text-sm font-medium mb-2">
+                CTA Headline <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 name="cta_headline"
@@ -488,7 +762,9 @@ const handleSubmit = async (e) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">CTA Button Text</label>
+              <label className="block text-sm font-medium mb-2">
+                CTA Button Text <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 name="cta_button_text"
@@ -523,7 +799,7 @@ const handleSubmit = async (e) => {
           </div>
         </div>
 
-        {/* ========== UPDATE BUTTON ========== */}
+        {/* ========== SUBMIT BUTTONS ========== */}
         <div className="sticky bottom-0 bg-white p-6 border-t shadow-lg rounded-lg">
           <div className="flex gap-4">
             <button
