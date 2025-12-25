@@ -110,7 +110,7 @@ export default function Outreach() {
   const [trendData, setTrendData] = useState<OutreachTrend[]>([]);
   const [platformData, setPlatformData] = useState<PlatformComparison[]>([]);
   const [campaignsData, setCampaignsData] = useState<OutreachCampaign[]>([]);
-  
+
   // In Review Leads states
   const [inReviewLeads, setInReviewLeads] = useState<InReviewLead[]>([]);
   const [selectedChannels, setSelectedChannels] = useState<Record<number, string>>({});
@@ -119,7 +119,7 @@ export default function Outreach() {
   const [emailAddresses, setEmailAddresses] = useState<Record<number, string>>({});
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(true);
-  
+
   // Loading and error states
   const [loading, setLoading] = useState(true);
   const [leadsLoading, setLeadsLoading] = useState(true);
@@ -207,19 +207,19 @@ export default function Outreach() {
 
       setInReviewLeads(data || []);
 
-  
+
       const channels: Record<number, string> = {};
       const urls: Record<number, string> = {};
       const emails: Record<number, string> = {};
       const campaignIds: Record<number, string> = {};
-      
+
       data?.forEach((lead) => {
         if (lead.outreach_channel) channels[lead.id] = lead.outreach_channel;
         if (lead.linkedin_url) urls[lead.id] = lead.linkedin_url;
         if (lead.email_address) emails[lead.id] = lead.email_address;
         if (lead.campaign_id) campaignIds[lead.id] = lead.campaign_id;
       });
-      
+
       setSelectedChannels(channels);
       setLinkedinUrls(urls);
       setEmailAddresses(emails);
@@ -246,7 +246,7 @@ export default function Outreach() {
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
       const data = await response.json();
-      
+
       if (Array.isArray(data)) {
         setCampaigns(data);
       } else if (data.campaigns && Array.isArray(data.campaigns)) {
@@ -651,9 +651,8 @@ export default function Outreach() {
                   <tr key={campaign.id} className="border-b border-border hover:bg-muted/50 transition-colors">
                     <td className="py-3 px-4 font-medium">{campaign.name}</td>
                     <td className="py-3 px-4 text-sm">
-                      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                        campaign.platform === "Smartlead" ? "bg-primary/10 text-primary" : "bg-secondary/10 text-secondary"
-                      }`}>
+                      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${campaign.platform === "Smartlead" ? "bg-primary/10 text-primary" : "bg-secondary/10 text-secondary"
+                        }`}>
                         {campaign.platform}
                       </span>
                     </td>
@@ -662,9 +661,8 @@ export default function Outreach() {
                     <td className="py-3 px-4 text-right">{campaign.opened}%</td>
                     <td className="py-3 px-4 text-right font-medium text-success">{campaign.replied}%</td>
                     <td className="py-3 px-4">
-                      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                        campaign.status === "active" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
-                      }`}>
+                      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${campaign.status === "active" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
+                        }`}>
                         {campaign.status}
                       </span>
                     </td>
