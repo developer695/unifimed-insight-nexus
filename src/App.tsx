@@ -33,6 +33,9 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import LandingPages from './pages/LandingPages';
 import EditLandingPage from './pages/EditLandingPage';
 import HomePage from './pages/HomePage';
+import LinkedinReplyMessages from './pages/LinkedinReplyMessages';
+import EmailReplyMessages from './pages/EmailReplyMessages';
+
 declare global {
   interface Window {
     dataLayer: any[];
@@ -99,6 +102,8 @@ const App = () => {
               {/* <Route path='roi' element={<CostROI />} /> */}
               {/* <Route path='system-health' element={<SystemHealth />} /> */}
               <Route path='landing-pages' element={<LandingPages />} />
+              <Route path='linkedin-messages' element={<LinkedinReplyMessages />} />
+              <Route path='email-messages' element={<EmailReplyMessages />} />
 
               <Route path="/edit/:id" element={<EditLandingPage />} />
             </Route>

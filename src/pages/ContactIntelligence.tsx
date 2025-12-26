@@ -225,13 +225,13 @@ export default function ContactIntelligence() {
             icon={<Users className="h-5 w-5" />}
             subtitle="Last 30 days"
           />
-          <StatCard
+          {/* <StatCard
             title="Verification Success"
             value={`${stats.verification_success}%`}
             change={stats.verification_success_change}
             icon={<CheckCircle className="h-5 w-5" />}
             subtitle={`${stats.valid_emails.toLocaleString()} valid emails`}
-          />
+          /> */}
           <StatCard
             title="Enrichment Score"
             value={stats.enrichment_score}

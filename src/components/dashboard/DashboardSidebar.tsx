@@ -11,6 +11,8 @@ import {
   Mic,
   Tag,
   Target,
+  Linkedin,
+  MailCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -69,16 +71,16 @@ const navItems: NavItem[] = [
     href: "/ad-campaigns",
     icon: Target,
   },
-  // {
-  //   title: "System Health",
-  //   href: "/system-health",
-  //   icon: Activity,
-  // },
-  // {
-  //   title: "Cost & ROI",
-  //   href: "/roi",
-  //   icon: DollarSign,
-  // },
+  {
+    title: "Linkedin Messages",
+    href: "/linkedin-messages",
+    icon: Linkedin,
+  },
+  {
+    title: "Email Messages",
+    href: "/email-messages",
+    icon: MailCheck,
+  },
   {
     title: "Analytics",
     href: "/analytics",
