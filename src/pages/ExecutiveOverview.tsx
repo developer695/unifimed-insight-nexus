@@ -70,14 +70,14 @@ export default function ExecutiveOverview() {
           icon={<TrendingUp className="h-5 w-5" />}
           subtitle="47 deals across 5 stages"
         />
-        <StatCard
+        {/* <StatCard
           title="System Health Score"
           value="94"
           change={2.1}
           changeLabel="vs last month"
           icon={<Activity className="h-5 w-5" />}
           subtitle="97.8% workflow success rate"
-        />
+        /> */}
       </div>
 
       {/* Charts */}

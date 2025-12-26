@@ -141,24 +141,24 @@ export default function SEOKeywords() {
       setKeywordVolumeData(volumeData || []);
 
       // Fetch discovery trend data
-      const { data: trendData, error: trendError } = await supabase
-        .from('keyword_discovery_trend')
-        .select('*')
-        .order('date', { ascending: true });
+      // const { data: trendData, error: trendError } = await supabase
+      //   .from('keyword_discovery_trend')
+      //   .select('*')
+      //   .order('date', { ascending: true });
 
-      if (trendError) throw trendError;
-      setDiscoveryTrendData(trendData || []);
+      // if (trendError) throw trendError;
+      // setDiscoveryTrendData(trendData || []);
 
       // Fetch top keywords
-      const { data: topData, error: topError } = await supabase
-        .from('top_keywords')
-        .select('*')
-        .order('volume', { ascending: false })
-        .limit(50);
+      // const { data: topData, error: topError } = await supabase
+      //   .from('top_keywords')
+      //   .select('*')
+      //   .order('volume', { ascending: false })
+      //   .limit(50);
 
-      if (topError) throw topError;
-      setTopKeywordsData(topData || []);
-      setFilteredKeywords(topData || []);
+      // if (topError) throw topError;
+      // setTopKeywordsData(topData || []);
+      // setFilteredKeywords(topData || []);
 
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -201,10 +201,6 @@ export default function SEOKeywords() {
           <Button onClick={() => navigate("/keyword-upload")}>
             <Upload className="h-4 w-4 mr-2" />
             Upload keywords
-          </Button>
-          <Button>
-            <Download className="h-4 w-4 mr-2" />
-            Export Keywords
           </Button>
         </div>
       </div>
@@ -280,7 +276,7 @@ export default function SEOKeywords() {
           </CardContent>
         </Card>
 
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>Keyword Discovery Trend</CardTitle>
           </CardHeader>
@@ -308,11 +304,11 @@ export default function SEOKeywords() {
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
 
       {/* Keywords Table */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Top Keywords by Volume</CardTitle>
@@ -368,13 +364,12 @@ export default function SEOKeywords() {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <span
-                          className={`font-medium ${
-                            keyword.competition < 50
-                              ? "text-success"
-                              : keyword.competition < 70
+                          className={`font-medium ${keyword.competition < 50
+                            ? "text-success"
+                            : keyword.competition < 70
                               ? "text-primary"
                               : "text-warning"
-                          }`}
+                            }`}
                         >
                           {keyword.competition}%
                         </span>
@@ -394,7 +389,7 @@ export default function SEOKeywords() {
             </table>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

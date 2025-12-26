@@ -5,10 +5,8 @@ import {
   Mail,
   Calendar,
   FileText,
-  TrendingUp,
   DollarSign,
   Settings,
-  Activity,
   BarChart3,
   Mic,
   Tag,
@@ -31,10 +29,11 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    title: "Executive Overview",
+    title: "Home",
     href: "/",
     icon: LayoutDashboard,
   },
+
   {
     title: "Voice Engine",
     href: "/voice-engine",
@@ -70,22 +69,22 @@ const navItems: NavItem[] = [
     href: "/ad-campaigns",
     icon: Target,
   },
-  {
-    title: "System Health",
-    href: "/system-health",
-    icon: Activity,
-  },
-  {
-    title: "Cost & ROI",
-    href: "/roi",
-    icon: DollarSign,
-  },
+  // {
+  //   title: "System Health",
+  //   href: "/system-health",
+  //   icon: Activity,
+  // },
+  // {
+  //   title: "Cost & ROI",
+  //   href: "/roi",
+  //   icon: DollarSign,
+  // },
   {
     title: "Analytics",
     href: "/analytics",
     icon: BarChart3,
   },
-    {
+  {
     title: "Landing Pages",
     href: "/landing-pages",
     icon: BarChart3,
@@ -117,7 +116,7 @@ export function DashboardSidebar({ collapsed }: DashboardSidebarProps) {
                     "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                     "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     isActive &&
-                      "bg-sidebar-primary text-sidebar-primary-foreground",
+                    "bg-sidebar-primary text-sidebar-primary-foreground",
                     collapsed && "justify-center"
                   )
                 }

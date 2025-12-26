@@ -19,8 +19,7 @@ import KeywordUpload from './pages/KeywordUpload';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import Analytics from './pages/Analytics';
-import CostROI from './pages/CostROI';
-import SystemHealth from './pages/SystemHealth';
+// import CostROI from './pages/CostROI';
 
 import { useEffect } from 'react';
 import { injectGTM } from './lib/loadGTM';
@@ -33,7 +32,7 @@ import Consultation from './pages/Consultation';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import LandingPages from './pages/LandingPages';
 import EditLandingPage from './pages/EditLandingPage';
-import { Testing } from './pages/testing';
+import HomePage from './pages/HomePage';
 declare global {
   interface Window {
     dataLayer: any[];
@@ -79,7 +78,7 @@ const App = () => {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<ExecutiveOverview />} />
+              <Route index element={<HomePage />} />
               <Route path='voice-engine' element={<VoiceEngine />} />
               <Route
                 path='contact-intelligence'
@@ -97,8 +96,8 @@ const App = () => {
               <Route path='keyword-upload' element={<KeywordUpload />} />
               <Route path='settings' element={<Settings />} />
               <Route path='analytics' element={<Analytics />} />
-              <Route path='roi' element={<CostROI />} />
-              <Route path='system-health' element={<SystemHealth />} />
+              {/* <Route path='roi' element={<CostROI />} /> */}
+              {/* <Route path='system-health' element={<SystemHealth />} /> */}
               <Route path='landing-pages' element={<LandingPages />} />
 
               <Route path="/edit/:id" element={<EditLandingPage />} />

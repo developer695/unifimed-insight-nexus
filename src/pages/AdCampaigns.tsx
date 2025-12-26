@@ -151,10 +151,6 @@ export default function AdCampaigns() {
             Agents 6-8 • Google Ads, LinkedIn, and optimization analytics
           </p>
         </div>
-        <Button>
-          <Download className="h-4 w-4 mr-2" />
-          Export Report
-        </Button>
       </div>
 
       {/* KPI Cards */}

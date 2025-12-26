@@ -33,7 +33,7 @@ import {
 import { supabase } from "@/lib/supabase";
 // Add these interfaces to your existing lib/supabase.ts file
 
- interface ContactIntelligenceStats {
+interface ContactIntelligenceStats {
   id: string;
   total_contacts: number;
   total_contacts_change: number;
@@ -51,7 +51,7 @@ import { supabase } from "@/lib/supabase";
   updated_at: string;
 }
 
- interface EmailVerification {
+interface EmailVerification {
   id: string;
   name: string;
   value: number;
@@ -60,7 +60,7 @@ import { supabase } from "@/lib/supabase";
   updated_at: string;
 }
 
- interface EnrichmentSource {
+interface EnrichmentSource {
   id: string;
   source: string;
   success: number;
@@ -69,7 +69,7 @@ import { supabase } from "@/lib/supabase";
   updated_at: string;
 }
 
- interface Contact {
+interface Contact {
   id: string;
   name: string;
   email: string;
@@ -83,7 +83,7 @@ import { supabase } from "@/lib/supabase";
 
 export default function ContactIntelligence() {
   const navigate = useNavigate();
-  
+
   const [stats, setStats] = useState<ContactIntelligenceStats | null>(null);
   const [verificationData, setVerificationData] = useState<EmailVerification[]>([]);
   const [enrichmentData, setEnrichmentData] = useState<EnrichmentSource[]>([]);
@@ -212,10 +212,6 @@ export default function ContactIntelligence() {
             <Upload className="h-4 w-4 mr-2" />
             Upload PDF
           </Button>
-          <Button>
-            <Download className="h-4 w-4 mr-2" />
-            Export Data
-          </Button>
         </div>
       </div>
 
@@ -325,7 +321,7 @@ export default function ContactIntelligence() {
       </div>
 
       {/* Contacts Table */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Recent Contacts</CardTitle>
@@ -419,7 +415,7 @@ export default function ContactIntelligence() {
             </table>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

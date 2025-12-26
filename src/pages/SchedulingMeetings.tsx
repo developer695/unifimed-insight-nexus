@@ -199,10 +199,6 @@ export default function SchedulingMeetings() {
           <h1 className="text-3xl font-bold">Scheduling & Meeting Intelligence</h1>
           <p className="text-muted-foreground mt-1">Agent 3 • Calendar integration and Read.AI insights</p>
         </div>
-        <Button>
-          <Download className="h-4 w-4 mr-2" />
-          Export Report
-        </Button>
       </div>
 
 

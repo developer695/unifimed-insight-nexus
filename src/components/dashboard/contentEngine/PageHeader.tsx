@@ -14,10 +14,6 @@ export const PageHeader = ({ onExport }: PageHeaderProps) => {
                     Agent 5 • Content production and performance analytics
                 </p>
             </div>
-            <Button onClick={onExport}>
-                <Download className="h-4 w-4 mr-2" />
-                Export Report
-            </Button>
         </div>
     );
 };

@@ -102,9 +102,9 @@ const getStatusBadge = (status: string) => {
     failed: { variant: "destructive", color: "bg-destructive text-destructive-foreground" },
     success: { variant: "default", color: "bg-success text-success-foreground" },
   };
-  
+
   const config = variants[status] || variants.operational;
-  
+
   return (
     <Badge className={config.color}>
       {status}
@@ -231,7 +231,7 @@ export default function SystemHealth() {
       <div className="flex items-center justify-center h-[calc(100vh-200px)]">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-          <p className="mt-2 text-muted-foreground">Loading system health data...</p>
+          <p className="mt-2 text-muted-foreground">Loading data...</p>
         </div>
       </div>
     );

@@ -224,7 +224,7 @@ export default function Outreach() {
       setLinkedinUrls(urls);
       setEmailAddresses(emails);
       setSelectedCampaigns(campaignIds);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching in review leads:", error);
       setLeadsError(error.message || "Failed to fetch leads");
     } finally {
@@ -235,10 +235,9 @@ export default function Outreach() {
   const fetchCampaigns = async () => {
     try {
       setCampaignsLoading(true);
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-      const apiUrl = `${backendUrl}/api/campaigns`;
+      const backendUrl = import.meta.env.VITE_N8N_GET_HEYREACH_CAMPAIGN_WEBHOOK_URL;
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(backendUrl, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
@@ -292,34 +291,23 @@ export default function Outreach() {
     return !!linkedinUrls[leadId]?.trim() || !!emailAddresses[leadId]?.trim();
   };
 
-  const handleUpdate = async () => {
+  const handleUpdate = async (leadId: number) => {
     try {
       setIsUpdating(true);
 
-      const leadsToUpdate = new Set([
-        ...Object.keys(selectedChannels),
-        ...Object.keys(linkedinUrls),
-        ...Object.keys(emailAddresses),
-        ...Object.keys(selectedCampaigns),
-      ]);
+      const updateData: any = {};
 
-      const updates = Array.from(leadsToUpdate).map((leadIdStr) => {
-        const leadId = parseInt(leadIdStr);
-        const updateData: any = {};
+      if (selectedChannels[leadId]) updateData.outreach_channel = selectedChannels[leadId];
+      if (linkedinUrls[leadId] !== undefined) updateData.linkedin_url = linkedinUrls[leadId] || null;
+      if (emailAddresses[leadId] !== undefined) updateData.email_address = emailAddresses[leadId] || null;
+      if (selectedCampaigns[leadId]) {
+        updateData.campaign_id = selectedCampaigns[leadId];
+        const campaign = campaigns.find((c) => c.id.toString() === selectedCampaigns[leadId]);
+        if (campaign) updateData.campaign_name = campaign.name;
+      }
 
-        if (selectedChannels[leadId]) updateData.outreach_channel = selectedChannels[leadId];
-        if (linkedinUrls[leadId] !== undefined) updateData.linkedin_url = linkedinUrls[leadId] || null;
-        if (emailAddresses[leadId] !== undefined) updateData.email_address = emailAddresses[leadId] || null;
-        if (selectedCampaigns[leadId]) {
-          updateData.campaign_id = selectedCampaigns[leadId];
-          const campaign = campaigns.find((c) => c.id.toString() === selectedCampaigns[leadId]);
-          if (campaign) updateData.campaign_name = campaign.name;
-        }
-
-        return supabase!.from("In Review Leads").update(updateData).eq("id", leadId);
-      });
-
-      await Promise.all(updates);
+      // Update only this specific lead
+      await supabase!.from("In Review Leads").update(updateData).eq("id", leadId);
 
       // Trigger n8n webhook
       const webhookUrl = import.meta.env.VITE_N8N_UPDATE_REVIEW_LEADS_WEBHOOK_URL;
@@ -335,13 +323,15 @@ export default function Outreach() {
         }
       }
 
+      // Refresh the leads list
       await fetchInReviewLeads();
     } catch (error) {
-      console.error("Error updating outreach channels:", error);
+      console.error("Error updating lead:", error);
     } finally {
       setIsUpdating(false);
     }
   };
+
 
   const hasChanges = [
     ...Object.keys(selectedChannels),
@@ -369,6 +359,29 @@ export default function Outreach() {
   });
 
   const canUpdate = hasChanges && allFieldsComplete;
+
+
+  const canUpdateLead = (leadId: number) => {
+    const lead = inReviewLeads.find((l) => l.id === leadId);
+    if (!lead) return false;
+
+    // Check if there are changes
+    const hasChanges = (
+      selectedChannels[leadId] !== lead.outreach_channel ||
+      linkedinUrls[leadId] !== (lead.linkedin_url || "") ||
+      emailAddresses[leadId] !== (lead.email_address || "") ||
+      selectedCampaigns[leadId] !== (lead.campaign_id || "")
+    );
+
+    // Check if all required fields are filled
+    const hasUserInfo = !!linkedinUrls[leadId]?.trim() || !!emailAddresses[leadId]?.trim();
+    const hasCampaign = !!selectedCampaigns[leadId];
+    const hasChannel = !!selectedChannels[leadId] && selectedChannels[leadId] !== "review";
+    const allFieldsComplete = hasUserInfo && hasCampaign && hasChannel;
+
+    return hasChanges && allFieldsComplete;
+  };
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -406,10 +419,6 @@ export default function Outreach() {
             Agent 2 • Smartlead & Heyreach campaign analytics
           </p>
         </div>
-        <Button>
-          <Download className="h-4 w-4 mr-2" />
-          Export Report
-        </Button>
       </div>
 
       {/* KPI Cards */}
@@ -530,13 +539,18 @@ export default function Outreach() {
                       <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">User Info</th>
                       <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Current Campaigns</th>
                       <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Outreach Channel</th>
+                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {inReviewLeads.map((lead) => (
                       <tr key={lead.id} className="border-b border-border hover:bg-muted/50 transition-colors">
-                        <td className="py-3 px-4 font-medium">{lead.first_name || ""} {lead.last_name || ""}</td>
-                        <td className="py-3 px-4 text-sm">{lead.company_name || "N/A"}</td>
+                        <td className="py-3 px-4 font-medium">
+                          {lead.first_name || ""} {lead.last_name || ""}
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          {lead.company_name || "N/A"}
+                        </td>
                         <td className="py-3 px-4">
                           <Popover>
                             <PopoverTrigger asChild>
@@ -579,7 +593,13 @@ export default function Outreach() {
                             disabled={campaignsLoading || !canSelectCampaign(lead.id)}
                           >
                             <SelectTrigger className="w-[200px]">
-                              <SelectValue placeholder={campaignsLoading ? "Loading..." : !canSelectCampaign(lead.id) ? "Add user info first" : "Select campaign"} />
+                              <SelectValue
+                                placeholder={
+                                  campaignsLoading ? "Loading..." :
+                                    !canSelectCampaign(lead.id) ? "Add user info first" :
+                                      "Select campaign"
+                                }
+                              />
                             </SelectTrigger>
                             <SelectContent>
                               {campaigns.map((campaign) => (
@@ -597,7 +617,13 @@ export default function Outreach() {
                             disabled={getAvailableChannels(lead.id).length === 0}
                           >
                             <SelectTrigger className="w-[180px]">
-                              <SelectValue placeholder={getAvailableChannels(lead.id).length === 0 ? "Add user info first" : "Select channel"} />
+                              <SelectValue
+                                placeholder={
+                                  getAvailableChannels(lead.id).length === 0 ?
+                                    "Add user info first" :
+                                    "Select channel"
+                                }
+                              />
                             </SelectTrigger>
                             <SelectContent>
                               {getAvailableChannels(lead.id).includes("smartlead") && (
@@ -612,65 +638,22 @@ export default function Outreach() {
                             </SelectContent>
                           </Select>
                         </td>
+                        <td className="py-3 px-4">
+                          <Button
+                            onClick={() => handleUpdate(lead.id)}
+                            disabled={!canUpdateLead(lead.id) || isUpdating}
+                            size="sm"
+                          >
+                            {isUpdating ? "Updating..." : "Update"}
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <div className="mt-4 flex justify-end">
-                <Button onClick={handleUpdate} disabled={!canUpdate || isUpdating}>
-                  {isUpdating ? "Updating..." : "Update"}
-                </Button>
-              </div>
             </>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Campaigns Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Active Campaigns</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Campaign Name</th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Platform</th>
-                  <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">Sent</th>
-                  <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">Delivered</th>
-                  <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">Opened</th>
-                  <th className="text-right py-3 px-4 font-medium text-sm text-muted-foreground">Replied</th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {campaignsData.map((campaign) => (
-                  <tr key={campaign.id} className="border-b border-border hover:bg-muted/50 transition-colors">
-                    <td className="py-3 px-4 font-medium">{campaign.name}</td>
-                    <td className="py-3 px-4 text-sm">
-                      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${campaign.platform === "Smartlead" ? "bg-primary/10 text-primary" : "bg-secondary/10 text-secondary"
-                        }`}>
-                        {campaign.platform}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right font-medium">{campaign.sent.toLocaleString()}</td>
-                    <td className="py-3 px-4 text-right">{campaign.delivered}%</td>
-                    <td className="py-3 px-4 text-right">{campaign.opened}%</td>
-                    <td className="py-3 px-4 text-right font-medium text-success">{campaign.replied}%</td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${campaign.status === "active" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
-                        }`}>
-                        {campaign.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </CardContent>
       </Card>
     </div>

@@ -23,7 +23,6 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-console.log("supabaseUrl", supabaseUrl);
 
 
 // Only create client if both values exist
@@ -167,10 +166,6 @@ export default function VoiceEngine() {
           <h1 className="text-3xl font-bold">Voice Engine</h1>
           <p className="text-muted-foreground mt-1">Agent 0 • Brand voice consistency and CTA optimization</p>
         </div>
-        <Button>
-          <Download className="h-4 w-4 mr-2" />
-          Export Report
-        </Button>
       </div>
 
       {/* KPI Cards */}
