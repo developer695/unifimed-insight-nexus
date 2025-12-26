@@ -16,6 +16,7 @@ import {
   Download,
   Upload,
   Loader2,
+  ExternalLink,
 } from "lucide-react";
 import {
   PieChart,
@@ -30,88 +31,85 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { supabase } from "@/lib/supabase";
-// Add these interfaces to your existing lib/supabase.ts file
 
 interface ContactIntelligenceStats {
-  id: string;
-  total_contacts: number;
-  total_contacts_change: number;
-  verification_success: number;
-  verification_success_change: number;
-  valid_emails: number;
-  enrichment_score: number;
-  enrichment_score_change: number;
-  high_value_contacts: number;
-  high_value_contacts_change: number;
-  high_value_percentage: number;
-  period_start: string;
-  period_end: string;
+  id: number;
+  total_leads: number;
+  enriched_leads: number;
+  pdf_url: string | null;
   created_at: string;
   updated_at: string;
 }
 
-interface EmailVerification {
-  id: string;
-  name: string;
-  value: number;
-  color: string;
-  created_at: string;
-  updated_at: string;
+interface AggregatedStats {
+  total_leads: number;
+  enriched_leads: number;
+  pdf_url: string | null;
 }
 
-interface EnrichmentSource {
-  id: string;
-  source: string;
-  success: number;
-  failed: number;
+interface DomainNotExist {
+  id: number;
   created_at: string;
-  updated_at: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  business_phone: string | null;
+  city: string | null;
+  state_province: string | null;
+  zip_postal_code: string | null;
+  country: string | null;
+  website: string | null;
 }
 
-interface Contact {
-  id: string;
-  name: string;
-  email: string;
-  status: string;
-  value_tier: string;
-  source: string;
-  date_added: string;
-  created_at: string;
-  updated_at: string;
-}
+type FilterType = "all" | "weekly" | "monthly" | "yearly";
 
 export default function ContactIntelligence() {
   const navigate = useNavigate();
 
-  const [stats, setStats] = useState<ContactIntelligenceStats | null>(null);
-  const [verificationData, setVerificationData] = useState<EmailVerification[]>([]);
-  const [enrichmentData, setEnrichmentData] = useState<EnrichmentSource[]>([]);
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [stats, setStats] = useState<AggregatedStats | null>(null);
+  const [domainData, setDomainData] = useState<DomainNotExist[]>([]);
   const [loading, setLoading] = useState(true);
+  const [domainLoading, setDomainLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [domainError, setDomainError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<FilterType>("all");
 
   useEffect(() => {
     fetchData();
-  }, []);
+    fetchDomainData();
+  }, [filter]);
 
-  useEffect(() => {
-    // Filter contacts based on search query
-    if (searchQuery.trim() === "") {
-      setFilteredContacts(contacts);
-    } else {
-      const query = searchQuery.toLowerCase();
-      const filtered = contacts.filter(
-        (contact) =>
-          contact.name.toLowerCase().includes(query) ||
-          contact.email.toLowerCase().includes(query) ||
-          contact.source.toLowerCase().includes(query)
-      );
-      setFilteredContacts(filtered);
+  const getDateFilter = (filterType: FilterType): string | null => {
+    if (filterType === "all") return null;
+    
+    const now = new Date();
+    let dateThreshold: Date;
+    
+    switch (filterType) {
+      case "weekly":
+        dateThreshold = new Date(now.setDate(now.getDate() - 7));
+        break;
+      case "monthly":
+        dateThreshold = new Date(now.setMonth(now.getMonth() - 1));
+        break;
+      case "yearly":
+        dateThreshold = new Date(now.setFullYear(now.getFullYear() - 1));
+        break;
+      default:
+        return null;
     }
-  }, [searchQuery, contacts]);
+    
+    return dateThreshold.toISOString();
+  };
 
   const fetchData = async () => {
     try {
@@ -122,45 +120,33 @@ export default function ContactIntelligence() {
         throw new Error('Supabase client not initialized. Please check your environment variables.');
       }
 
-      // Fetch stats
-      const { data: statsData, error: statsError } = await supabase
-        .from('contact_intelligence_stats')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+      // Build query with optional date filter
+      let query = supabase
+        .from('contact_enrichment_lead_statistics')
+        .select('*');
+      
+      const dateFilter = getDateFilter(filter);
+      if (dateFilter) {
+        query = query.gte('created_at', dateFilter);
+      }
+      
+      const { data: statsData, error: statsError } = await query
+        .order('created_at', { ascending: false });
 
       if (statsError) throw statsError;
-      setStats(statsData);
 
-      // Fetch verification data
-      const { data: verificationDataResult, error: verificationError } = await supabase
-        .from('email_verification')
-        .select('*')
-        .order('value', { ascending: false });
-
-      if (verificationError) throw verificationError;
-      setVerificationData(verificationDataResult || []);
-
-      // Fetch enrichment sources
-      const { data: enrichmentDataResult, error: enrichmentError } = await supabase
-        .from('enrichment_sources')
-        .select('*')
-        .order('success', { ascending: false });
-
-      if (enrichmentError) throw enrichmentError;
-      setEnrichmentData(enrichmentDataResult || []);
-
-      // Fetch contacts (limit to recent 50)
-      const { data: contactsData, error: contactsError } = await supabase
-        .from('contacts')
-        .select('*')
-        .order('date_added', { ascending: false })
-        .limit(50);
-
-      if (contactsError) throw contactsError;
-      setContacts(contactsData || []);
-      setFilteredContacts(contactsData || []);
+      // ALWAYS aggregate the data - sum ALL rows from the table
+      if (statsData && statsData.length > 0) {
+        const aggregated: AggregatedStats = {
+          total_leads: statsData.reduce((sum, record) => sum + record.total_leads, 0),
+          enriched_leads: statsData.reduce((sum, record) => sum + record.enriched_leads, 0),
+          pdf_url: statsData[0].pdf_url, // Use the most recent PDF
+        };
+        setStats(aggregated);
+      } else {
+        // No data found
+        setStats(null);
+      }
 
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -170,12 +156,92 @@ export default function ContactIntelligence() {
     }
   };
 
+  const fetchDomainData = async () => {
+    try {
+      setDomainLoading(true);
+      setDomainError(null);
+
+      if (!supabase) {
+        throw new Error('Supabase client not initialized. Please check your environment variables.');
+      }
+
+      const { data: domains, error: domainsError } = await supabase
+        .from('contact_intelligence_domain_not_exsist')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (domainsError) throw domainsError;
+      setDomainData(domains || []);
+
+    } catch (err) {
+      console.error('Error fetching domain data:', err);
+      setDomainError(err instanceof Error ? err.message : 'Failed to load domain data. Please try again.');
+    } finally {
+      setDomainLoading(false);
+    }
+  };
+
+  // Calculate metrics from available data
+  const getEnrichmentRate = () => {
+    if (!stats || stats.total_leads === 0) return 0;
+    return Math.round((stats.enriched_leads / stats.total_leads) * 100);
+  };
+
+  const getVerificationData = () => {
+    if (!stats) return [];
+    
+    const enriched = stats.enriched_leads;
+    const unenriched = stats.total_leads - stats.enriched_leads;
+    
+    return [
+      { 
+        name: "Enriched", 
+        value: enriched,
+        color: "#10b981"
+      },
+      { 
+        name: "Not Enriched", 
+        value: unenriched,
+        color: "#ef4444"
+      }
+    ];
+  };
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFilter(e.target.value as FilterType);
+  };
+
+  const getSubtitleText = () => {
+    switch (filter) {
+      case "all":
+        return "All time";
+      case "weekly":
+        return "Last 7 days";
+      case "monthly":
+        return "Last 30 days";
+      case "yearly":
+        return "Last one year";
+      default:
+        return "All time";
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
+  };
+
+  const handleWebsiteClick = (website: string | null) => {
+    if (!website) return;
+    
+    // Add https:// if not present
+    const url = website.startsWith('http') ? website : `https://${website}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   if (loading) {
@@ -197,6 +263,10 @@ export default function ContactIntelligence() {
     );
   }
 
+  const verificationData = getVerificationData();
+  const enrichmentRate = getEnrichmentRate();
+  const subtitleText = getSubtitleText();
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -208,10 +278,31 @@ export default function ContactIntelligence() {
           </p>
         </div>
         <div className="flex flex-row gap-4">
+          <div>
+            <select 
+              onChange={handleFilterChange} 
+              value={filter}
+              name="filter" 
+              id="filter"
+              className="px-3 py-2 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="all">All Time</option>
+              <option value="weekly">Last 7 Days</option>
+              <option value="monthly">Last 30 Days</option>
+              <option value="yearly">Last Year</option>
+            </select>
+          </div>
           <Button onClick={() => navigate('/contact-intelligence/upload')}>
             <Upload className="h-4 w-4 mr-2" />
             Upload PDF
           </Button>
+          
+          {stats?.pdf_url && (
+            <Button variant="outline" onClick={() => window.open(stats.pdf_url!, '_blank')}>
+              <Download className="h-4 w-4 mr-2" />
+              Download Report
+            </Button>
+          )}
         </div>
       </div>
 
@@ -219,32 +310,25 @@ export default function ContactIntelligence() {
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            title="Total Contacts"
-            value={stats.total_contacts.toLocaleString()}
-            change={stats.total_contacts_change}
+            title="Total Leads"
+            value={stats.total_leads}
+            change={0}
             icon={<Users className="h-5 w-5" />}
-            subtitle="Last 30 days"
+            subtitle={subtitleText}
           />
-          {/* <StatCard
-            title="Verification Success"
-            value={`${stats.verification_success}%`}
-            change={stats.verification_success_change}
+          <StatCard
+            title="Enriched Leads"
+            value={stats.enriched_leads}
+            change={0}
             icon={<CheckCircle className="h-5 w-5" />}
-            subtitle={`${stats.valid_emails.toLocaleString()} valid emails`}
-          /> */}
-          <StatCard
-            title="Enrichment Score"
-            value={stats.enrichment_score}
-            change={stats.enrichment_score_change}
-            icon={<TrendingUp className="h-5 w-5" />}
-            subtitle="Data completeness"
+            subtitle={subtitleText}
           />
           <StatCard
-            title="High Value Contacts"
-            value={stats.high_value_contacts.toLocaleString()}
-            change={stats.high_value_contacts_change}
-            icon={<Users className="h-5 w-5" />}
-            subtitle={`${stats.high_value_percentage}% of total`}
+            title="Enrichment Rate"
+            value={`${enrichmentRate}%`}
+            change={0}
+            icon={<TrendingUp className="h-5 w-5" />}
+            subtitle={subtitleText}
           />
         </div>
       )}
@@ -253,7 +337,7 @@ export default function ContactIntelligence() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Email Verification Results</CardTitle>
+            <CardTitle>Lead Enrichment Status</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -285,137 +369,83 @@ export default function ContactIntelligence() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Enrichment Success by Source</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={enrichmentData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="source" className="text-xs" />
-                <YAxis className="text-xs" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "0.5rem",
-                  }}
-                />
-                <Legend />
-                <Bar
-                  dataKey="success"
-                  name="Success %"
-                  fill="hsl(var(--chart-4))"
-                />
-                <Bar
-                  dataKey="failed"
-                  name="Failed %"
-                  fill="hsl(var(--chart-1))"
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
       </div>
 
-      {/* Contacts Table */}
-      {/* <Card>
+      {/* Domain Not Exist Table */}
+      <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Recent Contacts</CardTitle>
-            <div className="flex items-center gap-2">
-              <div className="relative w-64">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search contacts..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
+          <CardTitle>Domains Not Found ({domainData.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
-                    Name
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
-                    Email
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
-                    Status
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
-                    Value Tier
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
-                    Source
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
-                    Date Added
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredContacts.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                      No contacts found
-                    </td>
-                  </tr>
-                ) : (
-                  filteredContacts.map((contact) => (
-                    <tr
-                      key={contact.id}
-                      className="border-b border-border hover:bg-muted/50 transition-colors"
-                    >
-                      <td className="py-3 px-4 font-medium">{contact.name}</td>
-                      <td className="py-3 px-4 text-sm text-muted-foreground">
-                        {contact.email}
-                      </td>
-                      <td className="py-3 px-4">
-                        <Badge
-                          variant="secondary"
-                          className={
-                            contact.status === "verified"
-                              ? "bg-success/10 text-success"
-                              : "bg-warning/10 text-warning"
-                          }
-                        >
-                          {contact.status}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-4">
-                        <Badge
-                          variant={
-                            contact.value_tier === "high" ? "default" : "secondary"
-                          }
-                          className={
-                            contact.value_tier === "high" ? "bg-primary" : ""
-                          }
-                        >
-                          {contact.value_tier}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-4 text-sm">{contact.source}</td>
-                      <td className="py-3 px-4 text-sm text-muted-foreground">
-                        {formatDate(contact.date_added)}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          {domainLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : domainError ? (
+            <div className="text-center py-8">
+              <p className="text-destructive mb-4">{domainError}</p>
+              <Button onClick={fetchDomainData} size="sm">Retry</Button>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>First Name</TableHead>
+                    <TableHead>Last Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Business Phone</TableHead>
+                    <TableHead>City</TableHead>
+                    <TableHead>State/Province</TableHead>
+                    <TableHead>Zip/Postal Code</TableHead>
+                    <TableHead>Country</TableHead>
+                    <TableHead>Website</TableHead>
+                    <TableHead>Created At</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {domainData.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                        No data found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    domainData.map((row) => (
+                      <TableRow key={row.id}>
+                        <TableCell>{row.first_name || '-'}</TableCell>
+                        <TableCell>{row.last_name || '-'}</TableCell>
+                        <TableCell>{row.email || '-'}</TableCell>
+                        <TableCell>{row.business_phone || '-'}</TableCell>
+                        <TableCell>{row.city || '-'}</TableCell>
+                        <TableCell>{row.state_province || '-'}</TableCell>
+                        <TableCell>{row.zip_postal_code || '-'}</TableCell>
+                        <TableCell>{row.country || '-'}</TableCell>
+                        <TableCell>
+                          {row.website ? (
+                            <button
+                              onClick={() => handleWebsiteClick(row.website)}
+                              className="flex items-center gap-1 text-primary hover:underline"
+                            >
+                              {row.website}
+                              <ExternalLink className="h-3 w-3" />
+                            </button>
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {formatDate(row.created_at)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
-      </Card> */}
+      </Card>
     </div>
   );
 }
