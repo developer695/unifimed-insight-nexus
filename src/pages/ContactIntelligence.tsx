@@ -90,10 +90,10 @@ export default function ContactIntelligence() {
 
   const getDateFilter = (filterType: FilterType): string | null => {
     if (filterType === "all") return null;
-    
+
     const now = new Date();
     let dateThreshold: Date;
-    
+
     switch (filterType) {
       case "weekly":
         dateThreshold = new Date(now.setDate(now.getDate() - 7));
@@ -107,7 +107,7 @@ export default function ContactIntelligence() {
       default:
         return null;
     }
-    
+
     return dateThreshold.toISOString();
   };
 
@@ -124,12 +124,12 @@ export default function ContactIntelligence() {
       let query = supabase
         .from('contact_enrichment_lead_statistics')
         .select('*');
-      
+
       const dateFilter = getDateFilter(filter);
       if (dateFilter) {
         query = query.gte('created_at', dateFilter);
       }
-      
+
       const { data: statsData, error: statsError } = await query
         .order('created_at', { ascending: false });
 
@@ -189,18 +189,18 @@ export default function ContactIntelligence() {
 
   const getVerificationData = () => {
     if (!stats) return [];
-    
+
     const enriched = stats.enriched_leads;
     const unenriched = stats.total_leads - stats.enriched_leads;
-    
+
     return [
-      { 
-        name: "Enriched", 
+      {
+        name: "Enriched",
         value: enriched,
         color: "#10b981"
       },
-      { 
-        name: "Not Enriched", 
+      {
+        name: "Not Enriched",
         value: unenriched,
         color: "#ef4444"
       }
@@ -238,7 +238,7 @@ export default function ContactIntelligence() {
 
   const handleWebsiteClick = (website: string | null) => {
     if (!website) return;
-    
+
     // Add https:// if not present
     const url = website.startsWith('http') ? website : `https://${website}`;
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -279,10 +279,10 @@ export default function ContactIntelligence() {
         </div>
         <div className="flex flex-row gap-4">
           <div>
-            <select 
-              onChange={handleFilterChange} 
+            <select
+              onChange={handleFilterChange}
               value={filter}
-              name="filter" 
+              name="filter"
               id="filter"
               className="px-3 py-2 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
@@ -296,7 +296,7 @@ export default function ContactIntelligence() {
             <Upload className="h-4 w-4 mr-2" />
             Upload PDF
           </Button>
-          
+
           {stats?.pdf_url && (
             <Button variant="outline" onClick={() => window.open(stats.pdf_url!, '_blank')}>
               <Download className="h-4 w-4 mr-2" />
@@ -308,7 +308,7 @@ export default function ContactIntelligence() {
 
       {/* KPI Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3  gap-4">
           <StatCard
             title="Total Leads"
             value={stats.total_leads}

@@ -111,7 +111,7 @@ export default function KeywordUpload() {
       // Send request to keyword extraction webhook
       xhr.open(
         "POST",
-        import.meta.env.VITE_N8N_WEBHOOK_KEYWORDUPLOAD_URL || ""
+        import.meta.env.VITE_N8N_KEYWORDUPLOAD_WEBHOOK_URL || ""
       );
       xhr.send(formData);
 
@@ -239,8 +239,8 @@ export default function KeywordUpload() {
         <CardContent>
           <div
             className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${isDragging
-                ? "border-primary bg-primary/5"
-                : "border-muted-foreground/25 hover:border-muted-foreground/50"
+              ? "border-primary bg-primary/5"
+              : "border-muted-foreground/25 hover:border-muted-foreground/50"
               }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}

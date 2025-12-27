@@ -30,17 +30,23 @@ export function DashboardLayout() {
     <div className="flex h-screen w-full overflow-hidden bg-background">
       {/* Sidebar */}
       <aside
-        className={`${
-          sidebarCollapsed ? "w-16" : "w-64"
-        } transition-all duration-300 border-r border-sidebar-border bg-sidebar flex flex-col`}
+        className={`${sidebarCollapsed ? "w-16" : "w-64"
+          } transition-all duration-300 border-r border-sidebar-border bg-sidebar flex flex-col`}
       >
-        {/* Logo */}
-        <div className="h-16 flex items-center px-4 border-b border-sidebar-border">
+        <div className="h-16 flex items-center px-4 my-2 border-b border-sidebar-border w-full">
           {!sidebarCollapsed && (
-            <h1 className="text-xl font-bold text-sidebar-foreground">UnifiMed</h1>
+            <img
+              src="/unifimed.jpeg"
+              alt="UnifiMed Logo"
+              className="h-full w-full object-cover"
+            />
           )}
           {sidebarCollapsed && (
-            <span className="text-xl font-bold text-sidebar-foreground">U</span>
+            <img
+              src="/unifimed.jpeg"
+              alt="U"
+              className="h-full w-auto object-cover"
+            />
           )}
         </div>
 
@@ -86,7 +92,7 @@ export function DashboardLayout() {
                 </Badge>
               )}
             </Button>
-            
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">

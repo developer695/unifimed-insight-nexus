@@ -45,6 +45,10 @@ interface InReviewLead {
   hubspot_id: number | null;
   campaign_name: string | null;
   campaign_id: string | null;
+  stage: string | null;
+  segment: string | null;
+  opportunity: string | null;
+  cluster: string | null;
 }
 
 interface Campaign {
@@ -536,6 +540,10 @@ export default function Outreach() {
                     <tr className="border-b border-border">
                       <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Name</th>
                       <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Company Name</th>
+                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Stage</th>
+                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Segment</th>
+                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Opportunity</th>
+                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Cluster</th>
                       <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">User Info</th>
                       <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Current Campaigns</th>
                       <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Outreach Channel</th>
@@ -551,6 +559,20 @@ export default function Outreach() {
                         <td className="py-3 px-4 text-sm">
                           {lead.company_name || "N/A"}
                         </td>
+                        {/* Display the data from database */}
+                        <td className="py-3 px-4 text-sm">
+                          <div className="font-medium">{lead.stage || "-"}</div>
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          <div className="font-medium">{lead.segment || "-"}</div>
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          <div className="font-medium">{lead.opportunity || "-"}</div>
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          <div className="font-medium">{lead.cluster || "-"}</div>
+                        </td>
+                        {/* Rest of your existing columns */}
                         <td className="py-3 px-4">
                           <Popover>
                             <PopoverTrigger asChild>

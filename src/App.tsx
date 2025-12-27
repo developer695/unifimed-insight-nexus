@@ -19,6 +19,7 @@ import KeywordUpload from './pages/KeywordUpload';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import Analytics from './pages/Analytics';
+import ContentUplaodPage from './pages/ContentUplaodPage';
 // import CostROI from './pages/CostROI';
 
 import { useEffect } from 'react';
@@ -91,12 +92,13 @@ const App = () => {
               <Route path='scheduling' element={<SchedulingMeetings />} />
               <Route path='seo-keywords' element={<SEOKeywords />} />
               <Route path='content' element={<ContentEngine />} />
+              <Route path='content/content-upload' element={<ContentUplaodPage />} />
               <Route path='ad-campaigns' element={<AdCampaigns />} />
               <Route
                 path='contact-intelligence/upload'
                 element={<UploadPage />}
               />
-              <Route path='keyword-upload' element={<KeywordUpload />} />
+              <Route path='/seo-keywords/keyword-upload' element={<KeywordUpload />} />
               <Route path='settings' element={<Settings />} />
               <Route path='analytics' element={<Analytics />} />
               {/* <Route path='roi' element={<CostROI />} /> */}

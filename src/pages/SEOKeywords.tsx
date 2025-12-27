@@ -198,7 +198,7 @@ export default function SEOKeywords() {
           </p>
         </div>
         <div className="flex flex-row gap-4">
-          <Button onClick={() => navigate("/keyword-upload")}>
+          <Button onClick={() => navigate("/seo-keywords/keyword-upload")}>
             <Upload className="h-4 w-4 mr-2" />
             Upload keywords
           </Button>
