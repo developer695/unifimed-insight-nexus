@@ -75,7 +75,7 @@ export default function ContentEnginePage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader onExport={() => {/* Export functionality */ }} />
+      <PageHeader />
 
       {stats && <StatCards stats={stats} />}
 
