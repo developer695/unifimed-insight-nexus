@@ -91,11 +91,11 @@ const navItems: NavItem[] = [
     href: "/landing-pages",
     icon: BarChart3,
   },
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: Settings,
-  },
+  // {
+  //   title: "Settings",
+  //   href: "/settings",
+  //   icon: Settings,
+  // },
 ];
 
 interface DashboardSidebarProps {

@@ -40,6 +40,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
 import { useLinkedInAds } from "@/hooks/useLinkedInAds";
 import { useCampaignStats } from "@/hooks/useCampaignStats";
+import { OptimizationTabContent } from "@/components/dashboard/adsPageComp/optimization-tab-content";
 
 export default function AdCampaigns() {
   // Custom hooks
@@ -411,39 +412,8 @@ export default function AdCampaigns() {
                 onCancelCampaign={handleLinkedInCancelCampaign}
               />
             </TabsContent>
+            <OptimizationTabContent value="optimization" />
 
-            <TabsContent value="optimization">
-              <div className="space-y-4">
-                <div className="p-4 bg-success/10 border border-success/20 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <TrendingUp className="h-5 w-5 text-success mt-0.5" />
-                    <div>
-                      <h4 className="font-semibold text-success">
-                        Bid Optimization Applied
-                      </h4>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Increased bids by 15% on "Healthcare IT Solutions"
-                        campaign - CTR improved by 0.8%
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <Target className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <h4 className="font-semibold text-primary">
-                        Budget Reallocation Recommended
-                      </h4>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Shift $500 from Display to Search campaigns for better
-                        ROAS
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
