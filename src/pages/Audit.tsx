@@ -1,6 +1,14 @@
 import React, { useState, useEffect, FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
 
+// Declare the global trackFormSubmission function from GTM
+declare global {
+  interface Window {
+    trackFormSubmission?: (formData: Record<string, string>) => void;
+    dataLayer?: Array<Record<string, unknown>>;
+  }
+}
+
 interface LandingPageData {
   landing_page: {
     hero_section: {
@@ -43,6 +51,7 @@ const Audit: React.FC = () => {
     useState<LandingPageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -59,6 +68,27 @@ const Audit: React.FC = () => {
     fetchLandingPageData();
   }, []);
 
+  useEffect(() => {
+    // Google Tag Manager - Script
+    const script = document.createElement("script");
+    script.innerHTML = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-NT62W274');`;
+    document.head.appendChild(script);
+
+    const noscript = document.createElement("noscript");
+    noscript.innerHTML = `<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NT62W274"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe>`;
+    document.body.insertBefore(noscript, document.body.firstChild);
+
+    return () => {
+      document.head.removeChild(script);
+      document.body.removeChild(noscript);
+    };
+  }, []);
+
   const fetchLandingPageData = async () => {
     try {
       setLoading(true);
@@ -73,9 +103,6 @@ const Audit: React.FC = () => {
 
       if (data) {
         console.log("Raw data from Supabase:", data);
-        console.log("value_sections:", data.value_sections);
-        console.log("credibility_points:", data.credibility_points);
-        console.log("process_steps:", data.process_steps);
 
         const transformedData: LandingPageData = {
           landing_page: {
@@ -144,56 +171,156 @@ const Audit: React.FC = () => {
     }));
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log("Form submitted:", formData);
+ declare global {
+  interface Window {
+    trackFormSubmission?: (formData: Record<string, unknown>) => void;
+  }
+}
 
-    try {
-      const webhookUrl = import.meta.env.VITE_N8N_SEND_LEAD_DATA_WEBHOOK_URL;
+// =====================================================
+// FIXED handleSubmit FUNCTION
+// Copy this into your Audit.tsx, replacing the existing handleSubmit
+// =====================================================
 
-      if (!webhookUrl) {
-        throw new Error("Webhook URL not configured");
-      }
+const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setIsSubmitting(true);
+  console.log("Form submitted:", formData);
+
+  try {
+    // =====================================================
+    // STEP 1: Get visitor data from localStorage
+    // =====================================================
+    const visitorDataStr = localStorage.getItem('unifimed_visitor');
+    let visitor = visitorDataStr ? JSON.parse(visitorDataStr) : null;
+    
+    console.log("📊 Current visitor data:", visitor);
+
+    // =====================================================
+    // STEP 2: Update localStorage with form submission
+    // =====================================================
+    if (visitor) {
+      visitor.form_filled = true;
+      visitor.email = formData.email;
+      localStorage.setItem('unifimed_visitor', JSON.stringify(visitor));
+      console.log("✅ localStorage updated with form data");
+    }
+
+    // =====================================================
+    // STEP 3: Call GTM trackFormSubmission (if available)
+    // =====================================================
+    if (typeof window.trackFormSubmission === "function") {
+      window.trackFormSubmission({
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        companyName: formData.companyName,
+        deviceType: formData.deviceType,
+        launchStage: formData.launchStage,
+        message: formData.message,
+        page: "audit",
+      });
+      console.log("✅ GTM trackFormSubmission called");
+    } else {
+      console.warn("⚠️ GTM trackFormSubmission not available");
+    }
+
+    // =====================================================
+    // STEP 4: Push to dataLayer for GTM
+    // =====================================================
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'form_submission',
+      form_name: 'audit_form',
+      visitor_uuid: visitor?.uuid,
+      email: formData.email,
+    });
+
+    // =====================================================
+    // STEP 5: Send to webhook with ALL visitor data
+    // =====================================================
+    const webhookUrl = import.meta.env.VITE_N8N_SEND_LEAD_DATA_WEBHOOK_URL;
+
+    if (webhookUrl) {
+      const payload = {
+        // Event type for n8n to know this is a form submission
+        event_type: 'form_submission',
+        
+        // Visitor tracking data
+        visitor_uuid: visitor?.uuid || null,
+        visitor_identifier: visitor?.uuid || null,
+        visit_count: visitor?.visit_count || 1,
+        pages_visited: visitor?.pages_visited || [],
+        first_visit: visitor?.first_visit || null,
+        
+        // Form submission flag
+        form_submitted: true,
+        form_filled: true,
+        
+        // Email (separate field for easy access)
+        email: formData.email,
+        
+        // Full form data as JSON
+        form_data: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          companyName: formData.companyName,
+          deviceType: formData.deviceType,
+          launchStage: formData.launchStage,
+          message: formData.message,
+        },
+        
+        // Page info
+        page: "audit",
+        form_url: window.location.href,
+        
+        // Timestamp
+        timestamp: new Date().toISOString(),
+      };
+
+      console.log("📤 Sending to webhook:", payload);
 
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...formData,
-          page: "audit",
-          timestamp: new Date().toISOString(),
-        }),
+        body: JSON.stringify(payload),
       });
+
+      console.log("📥 Webhook response status:", response.status);
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        console.error("Webhook failed:", response.status);
       }
-
-      const result = await response.json();
-      console.log("Webhook response:", result);
-
-      alert("Thank you for your interest! We will contact you soon.");
-
-      // Reset form
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        companyName: "",
-        deviceType: "",
-        launchStage: "",
-        message: "",
-      });
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      alert(
-        "There was an error submitting your information. Please try again."
-      );
     }
-  };
+
+    // =====================================================
+    // STEP 6: Success!
+    // =====================================================
+    alert("Thank you for your interest! We will contact you soon.");
+
+    setFormData({
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      companyName: "",
+      deviceType: "",
+      launchStage: "",
+      message: "",
+    });
+
+  } catch (error) {
+    console.error("❌ Error submitting form:", error);
+    alert("There was an error submitting your information. Please try again.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const scrollToSection = (
     e: React.MouseEvent<HTMLAnchorElement>,
@@ -721,9 +848,7 @@ const Audit: React.FC = () => {
                   >
                     <option value="">Select...</option>
                     <option value="pre-launch">Pre-Launch (6+ months)</option>
-                    <option value="near-launch">
-                      Near Launch (0-6 months)
-                    </option>
+                    <option value="near-launch">Near Launch (0-6 months)</option>
                     <option value="launched">Recently Launched</option>
                     <option value="established">Established Product</option>
                   </select>
@@ -749,12 +874,40 @@ const Audit: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-primary text-white px-8 py-5 rounded-xl text-lg font-bold transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/50 mt-8 group"
+                  disabled={isSubmitting}
+                  className="w-full bg-primary text-white px-8 py-5 rounded-xl text-lg font-bold transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/50 mt-8 group disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
-                  {landing_page.cta_section.cta_button}
-                  <span className="inline-block ml-2 group-hover:translate-x-1 transition-transform">
-                    →
-                  </span>
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg
+                        className="animate-spin h-5 w-5"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Submitting...
+                    </span>
+                  ) : (
+                    <>
+                      {landing_page.cta_section.cta_button}
+                      <span className="inline-block ml-2 group-hover:translate-x-1 transition-transform">
+                        →
+                      </span>
+                    </>
+                  )}
                 </button>
 
                 <p className="text-center text-sm text-gray-500 mt-4">
