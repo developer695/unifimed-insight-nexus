@@ -43,6 +43,7 @@ const Consultation: React.FC = () => {
     useState<LandingPageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -144,17 +145,126 @@ const Consultation: React.FC = () => {
     }));
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log("Form submitted:", formData);
+const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setIsSubmitting(true);
+  console.log("Form submitted:", formData);
 
-    try {
-      const webhookUrl = import.meta.env.VITE_N8N_SEND_LEAD_DATA_WEBHOOK_URL;
+  try {
+    // ✅ Read visitor_id from COOKIE
+    const getCookie = (name: string): string | null => {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      return match ? match[2] : null;
+    };
 
-      if (!webhookUrl) {
-        throw new Error("Webhook URL not configured");
+    const visitorId = getCookie('visitor_id');
+    console.log('🔍 Visitor ID from cookie:', visitorId);
+
+    const currentFormData = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      companyName: formData.companyName,
+      title: formData.title,
+      consultationType: formData.consultationType,
+      message: formData.message,
+      page: "consultation",
+      submitted_at: new Date().toISOString(),
+    };
+
+    if (visitorId) {
+      // ✅ Get existing row first
+      const { data: existingRow, error: selectError } = await supabase
+        .from('events')
+        .select('id, emails, form_urls, form_submissions, form_data')
+        .eq('visitor_identifier', visitorId)
+        .single();
+
+      console.log('🔍 Existing row:', existingRow);
+
+      if (existingRow) {
+        // ✅ Append to arrays instead of replacing
+        const existingEmails = existingRow.emails || [];
+        const existingFormUrls = existingRow.form_urls || [];
+        const existingFormSubmissions = existingRow.form_submissions || [];
+
+        // Only add email if not already in array
+        const updatedEmails = existingEmails.includes(formData.email) 
+          ? existingEmails 
+          : [...existingEmails, formData.email];
+
+        // Add current URL to array
+        const currentUrl = window.location.href;
+        const updatedFormUrls = existingFormUrls.includes(currentUrl)
+          ? existingFormUrls
+          : [...existingFormUrls, currentUrl];
+
+        // Add form submission to array
+        const updatedFormSubmissions = [...existingFormSubmissions, currentFormData];
+
+        const { data, error } = await supabase
+          .from('events')
+          .update({
+            email: formData.email, // Latest email
+            form_submitted: true,
+            form_url: currentUrl, // Latest form URL
+            form_data: currentFormData, // Latest form data
+            // ✅ Arrays - append, don't replace
+            emails: updatedEmails,
+            form_urls: updatedFormUrls,
+            form_submissions: updatedFormSubmissions,
+          })
+          .eq('visitor_identifier', visitorId)
+          .select();
+
+        console.log('📤 Update result:', { data, error });
+
+        if (error) throw error;
+        console.log('✅ Form data appended to existing row');
+      } else {
+        // ✅ INSERT new row with arrays
+        const { data, error } = await supabase
+          .from('events')
+          .insert({
+            visitor_identifier: visitorId,
+            event_name: 'form_submission',
+            email: formData.email,
+            form_submitted: true,
+            form_url: window.location.href,
+            form_data: currentFormData,
+            // Initialize arrays
+            emails: [formData.email],
+            form_urls: [window.location.href],
+            form_submissions: [currentFormData],
+          });
+
+        if (error) throw error;
+        console.log('✅ New row created with form data');
       }
+    } else {
+      // No visitor ID - INSERT new row
+      const { data, error } = await supabase
+        .from('events')
+        .insert({
+          event_name: 'form_submission',
+          email: formData.email,
+          form_submitted: true,
+          form_url: window.location.href,
+          form_data: currentFormData,
+          emails: [formData.email],
+          form_urls: [window.location.href],
+          form_submissions: [currentFormData],
+        });
 
+      if (error) throw error;
+      console.log('✅ New row created (no visitor ID)');
+    }
+
+    // ✅ Send to n8n webhook
+    const webhookUrl = import.meta.env.VITE_N8N_SEND_LEAD_DATA_WEBHOOK_URL;
+
+    if (webhookUrl) {
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
@@ -162,40 +272,38 @@ const Consultation: React.FC = () => {
         },
         body: JSON.stringify({
           ...formData,
+          visitor_identifier: visitorId,
           page: "consultation",
           timestamp: new Date().toISOString(),
         }),
       });
-      console.log("response",response);
-      
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (response.ok) {
+        const result = await response.json();
+        console.log("✅ Webhook response:", result);
       }
-
-      const result = await response.json();
-      console.log("Webhook response:", result);
-
-      alert("Thank you for your interest! We will contact you soon.");
-
-      // Reset form
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        companyName: "",
-        title: "",
-        consultationType: "",
-        message: "",
-      });
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      alert(
-        "There was an error submitting your information. Please try again."
-      );
     }
-  };  
+
+    alert("Thank you for your interest! We will contact you soon.");
+
+    setFormData({
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      companyName: "",
+      title: "",
+      consultationType: "",
+      message: "",
+    });
+
+  } catch (error) {
+    console.error("❌ Error submitting form:", error);
+    alert("There was an error submitting your information. Please try again.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const scrollToSection = (
     e: React.MouseEvent<HTMLAnchorElement>,

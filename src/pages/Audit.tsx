@@ -170,153 +170,143 @@ const Audit: React.FC = () => {
       [name]: value,
     }));
   };
-
- declare global {
-  interface Window {
-    trackFormSubmission?: (formData: Record<string, unknown>) => void;
-  }
-}
-
-// =====================================================
-// FIXED handleSubmit FUNCTION
-// Copy this into your Audit.tsx, replacing the existing handleSubmit
-// =====================================================
-
+// import { supabase } from '@/lib/supabaseClient'; // your supabase client
 const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
   e.preventDefault();
   setIsSubmitting(true);
-  console.log("Form submitted:", formData);
 
   try {
-    // =====================================================
-    // STEP 1: Get visitor data from localStorage
-    // =====================================================
-    const visitorDataStr = localStorage.getItem('unifimed_visitor');
-    let visitor = visitorDataStr ? JSON.parse(visitorDataStr) : null;
-    
-    console.log("📊 Current visitor data:", visitor);
+    // Read visitor_id from COOKIE
+    const getCookie = (name: string): string | null => {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      return match ? match[2] : null;
+    };
 
-    // =====================================================
-    // STEP 2: Update localStorage with form submission
-    // =====================================================
-    if (visitor) {
-      visitor.form_filled = true;
-      visitor.email = formData.email;
-      localStorage.setItem('unifimed_visitor', JSON.stringify(visitor));
-      console.log("✅ localStorage updated with form data");
-    }
+    const visitorId = getCookie('visitor_id');
+    console.log('🔍 Visitor ID from cookie:', visitorId);
 
-    // =====================================================
-    // STEP 3: Call GTM trackFormSubmission (if available)
-    // =====================================================
-    if (typeof window.trackFormSubmission === "function") {
-      window.trackFormSubmission({
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        phone: formData.phone,
-        companyName: formData.companyName,
-        deviceType: formData.deviceType,
-        launchStage: formData.launchStage,
-        message: formData.message,
-        page: "audit",
-      });
-      console.log("✅ GTM trackFormSubmission called");
-    } else {
-      console.warn("⚠️ GTM trackFormSubmission not available");
-    }
-
-    // =====================================================
-    // STEP 4: Push to dataLayer for GTM
-    // =====================================================
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({
-      event: 'form_submission',
-      form_name: 'audit_form',
-      visitor_uuid: visitor?.uuid,
+    const currentFormData = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
       email: formData.email,
-    });
+      phone: formData.phone,
+      companyName: formData.companyName,
+      deviceType: formData.deviceType,
+      launchStage: formData.launchStage,
+      message: formData.message,
+      page: "audit",
+      submitted_at: new Date().toISOString(),
+    };
 
-    // =====================================================
-    // STEP 5: Send to webhook with ALL visitor data
-    // =====================================================
-    const webhookUrl = import.meta.env.VITE_N8N_SEND_LEAD_DATA_WEBHOOK_URL;
+    if (visitorId) {
+      // ✅ Get existing row with array data
+      const { data: existingRow, error: selectError } = await supabase
+        .from('events')
+        .select('id, visitor_identifier, emails, form_urls, form_submissions')
+        .eq('visitor_identifier', visitorId)
+        .single();
 
-    if (webhookUrl) {
-      const payload = {
-        // Event type for n8n to know this is a form submission
-        event_type: 'form_submission',
-        
-        // Visitor tracking data
-        visitor_uuid: visitor?.uuid || null,
-        visitor_identifier: visitor?.uuid || null,
-        visit_count: visitor?.visit_count || 1,
-        pages_visited: visitor?.pages_visited || [],
-        first_visit: visitor?.first_visit || null,
-        
-        // Form submission flag
-        form_submitted: true,
-        form_filled: true,
-        
-        // Email (separate field for easy access)
-        email: formData.email,
-        
-        // Full form data as JSON
-        form_data: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          companyName: formData.companyName,
-          deviceType: formData.deviceType,
-          launchStage: formData.launchStage,
-          message: formData.message,
-        },
-        
-        // Page info
-        page: "audit",
-        form_url: window.location.href,
-        
-        // Timestamp
-        timestamp: new Date().toISOString(),
-      };
+      console.log('🔍 Existing row check:', { existingRow, selectError });
 
-      console.log("📤 Sending to webhook:", payload);
+      if (existingRow) {
+        // ✅ Append to arrays instead of replacing
+        const existingEmails: string[] = existingRow.emails || [];
+        const existingFormUrls: string[] = existingRow.form_urls || [];
+        const existingFormSubmissions: object[] = existingRow.form_submissions || [];
 
-      const response = await fetch(webhookUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+        // Only add email if not already in array
+        const updatedEmails = existingEmails.includes(formData.email)
+          ? existingEmails
+          : [...existingEmails, formData.email];
 
-      console.log("📥 Webhook response status:", response.status);
+        // Add current URL to array (allow duplicates for tracking)
+        const currentUrl = window.location.href;
+        const updatedFormUrls = [...existingFormUrls, currentUrl];
 
-      if (!response.ok) {
-        console.error("Webhook failed:", response.status);
+        // Append new form submission to array
+        const updatedFormSubmissions = [...existingFormSubmissions, currentFormData];
+
+        // ✅ UPDATE existing row
+        const { data, error } = await supabase
+          .from('events')
+          .update({
+            email: formData.email,           // Latest email
+            form_submitted: true,
+            form_url: currentUrl,            // Latest form URL
+            form_data: currentFormData,      // Latest form data
+            // ✅ Arrays - append, don't replace
+            emails: updatedEmails,
+            form_urls: updatedFormUrls,
+            form_submissions: updatedFormSubmissions,
+          })
+          .eq('visitor_identifier', visitorId)
+          .select();
+
+        console.log('📤 Update result:', { data, error });
+
+        if (error) {
+          console.error('Supabase update error:', error);
+          throw error;
+        }
+
+        console.log('✅ Form data appended to existing row');
+      } else {
+        // ✅ INSERT new row with arrays initialized
+        console.log('⚠️ No existing row found, inserting new');
+        const { data, error } = await supabase
+          .from('events')
+          .insert({
+            visitor_identifier: visitorId,
+            event_name: 'form_submission',
+            email: formData.email,
+            form_submitted: true,
+            form_url: window.location.href,
+            form_data: currentFormData,
+            // Initialize arrays
+            emails: [formData.email],
+            form_urls: [window.location.href],
+            form_submissions: [currentFormData],
+          });
+
+        if (error) throw error;
+        console.log('✅ New row created');
       }
+    } else {
+      // No visitor - INSERT new row
+      console.log('⚠️ No visitor ID found');
+      const { data, error } = await supabase
+        .from('events')
+        .insert({
+          event_name: 'form_submission',
+          email: formData.email,
+          form_submitted: true,
+          form_url: window.location.href,
+          form_data: currentFormData,
+          emails: [formData.email],
+          form_urls: [window.location.href],
+          form_submissions: [currentFormData],
+        });
+
+      if (error) throw error;
+      console.log('✅ New row created (no visitor ID)');
     }
 
-    // =====================================================
-    // STEP 6: Success!
-    // =====================================================
-    alert("Thank you for your interest! We will contact you soon.");
+    alert('Thank you for your interest! We will contact you soon.');
 
     setFormData({
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      companyName: "",
-      deviceType: "",
-      launchStage: "",
-      message: "",
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      companyName: '',
+      deviceType: '',
+      launchStage: '',
+      message: '',
     });
 
   } catch (error) {
-    console.error("❌ Error submitting form:", error);
-    alert("There was an error submitting your information. Please try again.");
+    console.error('❌ Error:', error);
+    alert('There was an error. Please try again.');
   } finally {
     setIsSubmitting(false);
   }
@@ -500,7 +490,7 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         </div>
       </section>
 
-      {/* Value Section */}
+  
       {landing_page.value_sections &&
         landing_page.value_sections.length > 0 && (
           <>
