@@ -58,6 +58,7 @@ const Audit: React.FC = () => {
     lastName: "",
     email: "",
     phone: "",
+    companysize: "",
     companyName: "",
     deviceType: "",
     launchStage: "",
@@ -176,7 +177,6 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
   setIsSubmitting(true);
 
   try {
-    // Read visitor_id from COOKIE
     const getCookie = (name: string): string | null => {
       const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
       return match ? match[2] : null;
@@ -185,12 +185,14 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     const visitorId = getCookie('visitor_id');
     console.log('🔍 Visitor ID from cookie:', visitorId);
 
+    // ✅ Include companysize in currentFormData
     const currentFormData = {
       firstName: formData.firstName,
       lastName: formData.lastName,
       email: formData.email,
       phone: formData.phone,
       companyName: formData.companyName,
+      companysize: formData.companysize,  // ← Add this
       deviceType: formData.deviceType,
       launchStage: formData.launchStage,
       message: formData.message,
@@ -199,7 +201,6 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     };
 
     if (visitorId) {
-      // ✅ Get existing row with array data
       const { data: existingRow, error: selectError } = await supabase
         .from('events')
         .select('id, visitor_identifier, emails, form_urls, form_submissions')
@@ -209,32 +210,27 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
       console.log('🔍 Existing row check:', { existingRow, selectError });
 
       if (existingRow) {
-        // ✅ Append to arrays instead of replacing
         const existingEmails: string[] = existingRow.emails || [];
         const existingFormUrls: string[] = existingRow.form_urls || [];
         const existingFormSubmissions: object[] = existingRow.form_submissions || [];
 
-        // Only add email if not already in array
         const updatedEmails = existingEmails.includes(formData.email)
           ? existingEmails
           : [...existingEmails, formData.email];
 
-        // Add current URL to array (allow duplicates for tracking)
         const currentUrl = window.location.href;
         const updatedFormUrls = [...existingFormUrls, currentUrl];
-
-        // Append new form submission to array
         const updatedFormSubmissions = [...existingFormSubmissions, currentFormData];
 
-        // ✅ UPDATE existing row
+        // ✅ UPDATE - Fixed company_size
         const { data, error } = await supabase
           .from('events')
           .update({
-            email: formData.email,           // Latest email
+            email: formData.email,
             form_submitted: true,
-            form_url: currentUrl,            // Latest form URL
-            form_data: currentFormData,      // Latest form data
-            // ✅ Arrays - append, don't replace
+            company_size: formData.companysize,  // ← Fixed: was currentFormData
+            form_url: currentUrl,
+            form_data: currentFormData,
             emails: updatedEmails,
             form_urls: updatedFormUrls,
             form_submissions: updatedFormSubmissions,
@@ -243,16 +239,11 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
           .select();
 
         console.log('📤 Update result:', { data, error });
-
-        if (error) {
-          console.error('Supabase update error:', error);
-          throw error;
-        }
-
+        if (error) throw error;
         console.log('✅ Form data appended to existing row');
+
       } else {
-        // ✅ INSERT new row with arrays initialized
-        console.log('⚠️ No existing row found, inserting new');
+        // ✅ INSERT (visitor exists, no row) - Added company_size
         const { data, error } = await supabase
           .from('events')
           .insert({
@@ -260,9 +251,9 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
             event_name: 'form_submission',
             email: formData.email,
             form_submitted: true,
+            company_size: formData.companysize,  // ← Add this
             form_url: window.location.href,
             form_data: currentFormData,
-            // Initialize arrays
             emails: [formData.email],
             form_urls: [window.location.href],
             form_submissions: [currentFormData],
@@ -272,13 +263,13 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         console.log('✅ New row created');
       }
     } else {
-      // No visitor - INSERT new row
-      console.log('⚠️ No visitor ID found');
+      // ✅ INSERT (no visitor) - Already had company_size but fix the casing
       const { data, error } = await supabase
         .from('events')
         .insert({
           event_name: 'form_submission',
           email: formData.email,
+          company_size: formData.companysize,  // ← Fixed casing
           form_submitted: true,
           form_url: window.location.href,
           form_data: currentFormData,
@@ -293,11 +284,13 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
 
     alert('Thank you for your interest! We will contact you soon.');
 
+    // ✅ Fixed: consistent casing
     setFormData({
       firstName: '',
       lastName: '',
       email: '',
       phone: '',
+      companysize: '',  // ← Fixed casing (was companySize)
       companyName: '',
       deviceType: '',
       launchStage: '',
@@ -799,6 +792,30 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
                   />
                 </div>
 
+
+  <div className="group">
+                  <label
+                    htmlFor="practiceSize"
+                    className="block mb-2 font-semibold text-gray-700 group-focus-within:text-blue-600 transition-colors"
+                  >
+                    Company Size
+                  </label>
+                  <select
+                    id="companysize"
+                    name="companysize"
+                    value={formData.companysize}
+                    onChange={handleInputChange}
+                    className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-gray-300 bg-white cursor-pointer"
+                  >
+                    <option value="">Select practice size...</option>
+                    <option value="Below 10">Below 10</option>
+                    <option value="10-20">10 to 20</option>
+                    <option value="20-30">20 to 30</option>
+                    <option value="30-40">30 to 40</option>
+                    <option value="40-50">40 to 50</option>
+                    <option value="50+">50+</option>
+                  </select>
+                </div>
                 <div className="group">
                   <label
                     htmlFor="deviceType"

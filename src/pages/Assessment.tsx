@@ -51,7 +51,7 @@ const [isSubmitting, setIsSubmitting] = useState(false);
     phone: "",
     jobTitle: "",
     companyWebsite: "",
-    companySize: "",
+      companySize: "",
     requestAsset: "",
 
   });
@@ -78,7 +78,7 @@ const [isSubmitting, setIsSubmitting] = useState(false);
         console.log("credibility_points:", data.credibility_points);
         console.log("process_steps:", data.process_steps);
 
-        // Transform database data to match component structure
+      
         const transformedData: LandingPageData = {
           landing_page: {
             hero_section: {
@@ -202,19 +202,19 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
       // ✅ Get existing row with array data
       const { data: existingRow, error: selectError } = await supabase
         .from('events')
-        .select('id, visitor_identifier, emails, form_urls, form_submissions')
+        .select('id, visitor_identifier, emails, form_urls, form_submissions ')
         .eq('visitor_identifier', visitorId)
         .single();
 
       console.log('🔍 Existing row check:', existingRow);
 
       if (existingRow) {
-        // ✅ Append to arrays instead of replacing
+      
         const existingEmails: string[] = existingRow.emails || [];
         const existingFormUrls: string[] = existingRow.form_urls || [];
         const existingFormSubmissions: object[] = existingRow.form_submissions || [];
 
-        // Only add email if not already in array
+        
         const updatedEmails = existingEmails.includes(formData.email)
           ? existingEmails
           : [...existingEmails, formData.email];
@@ -233,7 +233,7 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
             form_submitted: true,
             form_url: currentUrl,
             form_data: currentFormData,
-            // ✅ Arrays - append, don't replace
+           company_size: formData.companySize, 
             emails: updatedEmails,
             form_urls: updatedFormUrls,
             form_submissions: updatedFormSubmissions,
@@ -254,6 +254,7 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
             event_name: 'form_submission',
             email: formData.email,
             form_submitted: true,
+             company_size: formData.companySize,
             form_url: window.location.href,
             form_data: currentFormData,
             emails: [formData.email],
@@ -715,7 +716,7 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
                     placeholder="Manager"
                   />
                 </div>
-
+ 
                 <div className="group">
                   <label
                     htmlFor="companyWebsite"
@@ -750,11 +751,12 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
                     className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-gray-300 bg-white cursor-pointer"
                   >
                     <option value="">Select practice size...</option>
-                    <option value="1">Solo Practitioner</option>
-                    <option value="2-5">2-5 Providers</option>
-                    <option value="6-15">6-15 Providers</option>
-                    <option value="16-50">16-50 Providers</option>
-                    <option value="50+">50+ Providers</option>
+                    <option value="Below 10">Below 10</option>
+                    <option value="10-20">10 to 20</option>
+                    <option value="20-30">20 to 30</option>
+                    <option value="30-40">30 to 40</option>
+                    <option value="40-50">40 to 50</option>
+                    <option value="50+">50+</option>
                   </select>
                 </div>
 
@@ -773,12 +775,12 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
                     className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-gray-300 bg-white cursor-pointer"
                   >
                     <option value="">Select asset to request...</option>
-                    <option value="1">Pre-Clinical</option>
-                    <option value="2-5">EFS/FIH</option>
-                    <option value="6-15">Pre-Submission</option>
-                    <option value="16-50">Pivotal</option>
-                    <option value="50+">Submitted</option>
-                    <option value="50+">Cleared/Approved</option>
+                    <option value="Pre-Clinical">Pre-Clinical</option>
+                    <option value="EFS/FIH">EFS/FIH</option>
+                    <option value="Pre-Submission">Pre-Submission</option>
+                    <option value="Pivotal">Pivotal</option>
+                    <option value="Submitted">Submitted</option>
+                    <option value="Cleared/Approved">Cleared/Approved</option>
                     <option value="50+">Early Commercial</option>
                     <option value="50+">Scaling Commercial</option>
                   </select>

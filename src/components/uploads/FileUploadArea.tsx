@@ -33,6 +33,7 @@ export function FileUploadArea({
 
   const handleFileSelect = (files: FileList | null) => {
     if (!files || !selectedCategory || isUploading) return;
+console.log("isUploading",isUploading);
 
     let allowedFiles: File[] = [];
 

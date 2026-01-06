@@ -51,6 +51,7 @@ const Consultation: React.FC = () => {
     email: "",
     phone: "",
     companyName: "",
+    companysize: "",
     title: "",
     consultationType: "",
     message: "",
@@ -209,7 +210,10 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
             email: formData.email, // Latest email
             form_submitted: true,
             form_url: currentUrl, // Latest form URL
-            form_data: currentFormData, // Latest form data
+            form_data: currentFormData, 
+            company_size: formData.companysize,
+
+            // Latest form data
             // ✅ Arrays - append, don't replace
             emails: updatedEmails,
             form_urls: updatedFormUrls,
@@ -233,6 +237,7 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
             form_submitted: true,
             form_url: window.location.href,
             form_data: currentFormData,
+              company_size: formData.companysize,
             // Initialize arrays
             emails: [formData.email],
             form_urls: [window.location.href],
@@ -252,6 +257,7 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
           form_submitted: true,
           form_url: window.location.href,
           form_data: currentFormData,
+          company_size: formData.companysize,
           emails: [formData.email],
           form_urls: [window.location.href],
           form_submissions: [currentFormData],
@@ -295,6 +301,7 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
       title: "",
       consultationType: "",
       message: "",
+      companysize: "",
     });
 
   } catch (error) {
@@ -673,6 +680,29 @@ useEffect(() => {
                     className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 focus:outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 hover:border-gray-300"
                     placeholder="ABC Medical Devices"
                   />
+                </div>
+                   <div className="group">
+                  <label
+                    htmlFor="practiceSize"
+                    className="block mb-2 font-semibold text-gray-700 group-focus-within:text-blue-600 transition-colors"
+                  >
+                    Company Size
+                  </label>
+                  <select
+                    id="companysize"
+                    name="companysize"
+                    value={formData.companysize}
+                    onChange={handleInputChange}
+                    className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-gray-300 bg-white cursor-pointer"
+                  >
+                    <option value="">Select practice size...</option>
+                    <option value="Below 10">Below 10</option>
+                    <option value="10-20">10 to 20</option>
+                    <option value="20-30">20 to 30</option>
+                    <option value="30-40">30 to 40</option>
+                    <option value="40-50">40 to 50</option>
+                    <option value="50+">50+</option>
+                  </select>
                 </div>
 
                 <div className="group">
