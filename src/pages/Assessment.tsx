@@ -1,5 +1,7 @@
 import React, { useState, useEffect, FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 
 interface LandingPageData {
   landing_page: {
@@ -44,6 +46,7 @@ const Assessment: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 const [isSubmitting, setIsSubmitting] = useState(false);
+const MySwal = withReactContent(Swal);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -309,7 +312,13 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
       }
     }
 
-    alert("Thank you for your interest! We will contact you soon.");
+   MySwal.fire({
+  title: "Thank You!",
+  text: "Thank you for your interest. We will contact you soon.",
+  icon: "success",
+  confirmButtonText: "Close",
+  timer: 5000, 
+});
 
     setFormData({
       firstName: "",

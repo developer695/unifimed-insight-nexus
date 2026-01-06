@@ -1,7 +1,9 @@
 import React, { useState, useEffect, FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
+import withReactContent from "sweetalert2-react-content";
+import Swal from "sweetalert2";
 
-// Declare the global trackFormSubmission function from GTM
+  
 declare global {
   interface Window {
     trackFormSubmission?: (formData: Record<string, string>) => void;
@@ -52,6 +54,7 @@ const Audit: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const MySwal = withReactContent(Swal);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -282,7 +285,13 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
       console.log('✅ New row created (no visitor ID)');
     }
 
-    alert('Thank you for your interest! We will contact you soon.');
+   MySwal.fire({
+  title: "Thank You!",
+  text: "Thank you for your interest. We will contact you soon.",
+  icon: "success",
+  confirmButtonText: "Close",
+  timer: 5000, 
+});
 
     // ✅ Fixed: consistent casing
     setFormData({
