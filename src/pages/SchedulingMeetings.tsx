@@ -217,29 +217,7 @@ export default function SchedulingMeetings() {
               subtitle={`${stats.meetings_completed} completed`}
             />
 
-            <StatCard
-              title="No-Show Rate"
-              value={`${stats.no_show_rate}%`}
-              change={stats.no_show_change}
-              icon={<Users className="h-5 w-5" />}
-              subtitle={`${stats.no_show_total} no-shows`}
-            />
-
-            <StatCard
-              title="Avg Meeting Duration"
-              value={`${stats.avg_meeting_duration} min`}
-              change={stats.avg_duration_change}
-              icon={<TrendingUp className="h-5 w-5" />}
-              subtitle={`Target: ${stats.duration_target} min`}
-            />
-
-            <StatCard
-              title="Read.AI Coverage"
-              value={`${stats.read_ai_coverage}%`}
-              change={stats.read_ai_change}
-              icon={<Mic className="h-5 w-5" />}
-              subtitle={`${stats.transcripts_total} transcripts`}
-            />
+            
           </>
         ) : (
           <div className="col-span-4 text-muted-foreground">No stats found.</div>

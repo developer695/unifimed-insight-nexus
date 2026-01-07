@@ -3,7 +3,14 @@
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Mail, MessageSquare, TrendingUp, Users, Download, Loader2 } from "lucide-react";
+import {
+  Mail,
+  MessageSquare,
+  TrendingUp,
+  Users,
+  Download,
+  Loader2,
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -117,10 +124,16 @@ export default function Outreach() {
 
   // In Review Leads states
   const [inReviewLeads, setInReviewLeads] = useState<InReviewLead[]>([]);
-  const [selectedChannels, setSelectedChannels] = useState<Record<number, string>>({});
-  const [selectedCampaigns, setSelectedCampaigns] = useState<Record<number, string>>({});
+  const [selectedChannels, setSelectedChannels] = useState<
+    Record<number, string>
+  >({});
+  const [selectedCampaigns, setSelectedCampaigns] = useState<
+    Record<number, string>
+  >({});
   const [linkedinUrls, setLinkedinUrls] = useState<Record<number, string>>({});
-  const [emailAddresses, setEmailAddresses] = useState<Record<number, string>>({});
+  const [emailAddresses, setEmailAddresses] = useState<Record<number, string>>(
+    {}
+  );
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(true);
 
@@ -143,14 +156,14 @@ export default function Outreach() {
       setError(null);
 
       if (!supabase) {
-        throw new Error('Supabase client not initialized.');
+        throw new Error("Supabase client not initialized.");
       }
 
       // Fetch stats
       const { data: statsData, error: statsError } = await supabase
-        .from('outreach_stats')
-        .select('*')
-        .order('created_at', { ascending: false })
+        .from("outreach_stats")
+        .select("*")
+        .order("created_at", { ascending: false })
         .limit(1)
         .single();
 
@@ -159,34 +172,34 @@ export default function Outreach() {
 
       // Fetch trend data
       const { data: trendsData, error: trendsError } = await supabase
-        .from('outreach_trends')
-        .select('*')
-        .order('date', { ascending: true });
+        .from("outreach_trends")
+        .select("*")
+        .order("date", { ascending: true });
 
       if (trendsError) throw trendsError;
       setTrendData(trendsData || []);
 
       // Fetch platform comparison
       const { data: platformDataResult, error: platformError } = await supabase
-        .from('platform_comparison')
-        .select('*')
-        .order('metric', { ascending: true });
+        .from("platform_comparison")
+        .select("*")
+        .order("metric", { ascending: true });
 
       if (platformError) throw platformError;
       setPlatformData(platformDataResult || []);
 
       // Fetch campaigns
-      const { data: campaignsDataResult, error: campaignsError } = await supabase
-        .from('outreach_campaigns')
-        .select('*')
-        .order('sent', { ascending: false });
+      const { data: campaignsDataResult, error: campaignsError } =
+        await supabase
+          .from("outreach_campaigns")
+          .select("*")
+          .order("sent", { ascending: false });
 
       if (campaignsError) throw campaignsError;
       setCampaignsData(campaignsDataResult || []);
-
     } catch (err) {
-      console.error('Error fetching dashboard data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load data.');
+      console.error("Error fetching dashboard data:", err);
+      setError(err instanceof Error ? err.message : "Failed to load data.");
     } finally {
       setLoading(false);
     }
@@ -198,7 +211,7 @@ export default function Outreach() {
       setLeadsError(null);
 
       if (!supabase) {
-        throw new Error('Supabase client not initialized.');
+        throw new Error("Supabase client not initialized.");
       }
 
       const { data, error } = await supabase
@@ -210,7 +223,6 @@ export default function Outreach() {
       if (error) throw error;
 
       setInReviewLeads(data || []);
-
 
       const channels: Record<number, string> = {};
       const urls: Record<number, string> = {};
@@ -239,14 +251,16 @@ export default function Outreach() {
   const fetchCampaigns = async () => {
     try {
       setCampaignsLoading(true);
-      const backendUrl = import.meta.env.VITE_N8N_GET_HEYREACH_CAMPAIGN_WEBHOOK_URL;
+      const backendUrl = import.meta.env
+        .VITE_N8N_GET_HEYREACH_CAMPAIGN_WEBHOOK_URL;
 
       const response = await fetch(backendUrl, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
 
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
 
       const data = await response.json();
 
@@ -285,7 +299,8 @@ export default function Outreach() {
     const hasLinkedin = !!linkedinUrls[leadId]?.trim();
     const hasEmail = !!emailAddresses[leadId]?.trim();
 
-    if (hasLinkedin && hasEmail) return ["smartlead", "heyreach", "multichannel"];
+    if (hasLinkedin && hasEmail)
+      return ["smartlead", "heyreach", "multichannel"];
     else if (hasLinkedin) return ["heyreach"];
     else if (hasEmail) return ["smartlead"];
     return [];
@@ -301,20 +316,29 @@ export default function Outreach() {
 
       const updateData: any = {};
 
-      if (selectedChannels[leadId]) updateData.outreach_channel = selectedChannels[leadId];
-      if (linkedinUrls[leadId] !== undefined) updateData.linkedin_url = linkedinUrls[leadId] || null;
-      if (emailAddresses[leadId] !== undefined) updateData.email_address = emailAddresses[leadId] || null;
+      if (selectedChannels[leadId])
+        updateData.outreach_channel = selectedChannels[leadId];
+      if (linkedinUrls[leadId] !== undefined)
+        updateData.linkedin_url = linkedinUrls[leadId] || null;
+      if (emailAddresses[leadId] !== undefined)
+        updateData.email_address = emailAddresses[leadId] || null;
       if (selectedCampaigns[leadId]) {
         updateData.campaign_id = selectedCampaigns[leadId];
-        const campaign = campaigns.find((c) => c.id.toString() === selectedCampaigns[leadId]);
+        const campaign = campaigns.find(
+          (c) => c.id.toString() === selectedCampaigns[leadId]
+        );
         if (campaign) updateData.campaign_name = campaign.name;
       }
 
       // Update only this specific lead
-      await supabase!.from("In Review Leads").update(updateData).eq("id", leadId);
+      await supabase!
+        .from("In Review Leads")
+        .update(updateData)
+        .eq("id", leadId);
 
       // Trigger n8n webhook
-      const webhookUrl = import.meta.env.VITE_N8N_UPDATE_REVIEW_LEADS_WEBHOOK_URL;
+      const webhookUrl = import.meta.env
+        .VITE_N8N_UPDATE_REVIEW_LEADS_WEBHOOK_URL;
       if (webhookUrl) {
         try {
           await fetch(webhookUrl, {
@@ -336,7 +360,6 @@ export default function Outreach() {
     }
   };
 
-
   const hasChanges = [
     ...Object.keys(selectedChannels),
     ...Object.keys(linkedinUrls),
@@ -356,41 +379,42 @@ export default function Outreach() {
   });
 
   const allFieldsComplete = inReviewLeads.every((lead) => {
-    const hasUserInfo = !!linkedinUrls[lead.id]?.trim() || !!emailAddresses[lead.id]?.trim();
+    const hasUserInfo =
+      !!linkedinUrls[lead.id]?.trim() || !!emailAddresses[lead.id]?.trim();
     const hasCampaign = !!selectedCampaigns[lead.id];
-    const hasChannel = !!selectedChannels[lead.id] && selectedChannels[lead.id] !== "review";
+    const hasChannel =
+      !!selectedChannels[lead.id] && selectedChannels[lead.id] !== "review";
     return hasUserInfo && hasCampaign && hasChannel;
   });
 
   const canUpdate = hasChanges && allFieldsComplete;
-
 
   const canUpdateLead = (leadId: number) => {
     const lead = inReviewLeads.find((l) => l.id === leadId);
     if (!lead) return false;
 
     // Check if there are changes
-    const hasChanges = (
+    const hasChanges =
       selectedChannels[leadId] !== lead.outreach_channel ||
       linkedinUrls[leadId] !== (lead.linkedin_url || "") ||
       emailAddresses[leadId] !== (lead.email_address || "") ||
-      selectedCampaigns[leadId] !== (lead.campaign_id || "")
-    );
+      selectedCampaigns[leadId] !== (lead.campaign_id || "");
 
     // Check if all required fields are filled
-    const hasUserInfo = !!linkedinUrls[leadId]?.trim() || !!emailAddresses[leadId]?.trim();
+    const hasUserInfo =
+      !!linkedinUrls[leadId]?.trim() || !!emailAddresses[leadId]?.trim();
     const hasCampaign = !!selectedCampaigns[leadId];
-    const hasChannel = !!selectedChannels[leadId] && selectedChannels[leadId] !== "review";
+    const hasChannel =
+      !!selectedChannels[leadId] && selectedChannels[leadId] !== "review";
     const allFieldsComplete = hasUserInfo && hasCampaign && hasChannel;
 
     return hasChanges && allFieldsComplete;
   };
 
-
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -426,28 +450,14 @@ export default function Outreach() {
       </div>
 
       {/* KPI Cards */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+     {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <StatCard
             title="Total Sent"
             value={stats.total_sent.toLocaleString()}
             change={stats.total_sent_change}
             icon={<Mail className="h-5 w-5" />}
             subtitle="Last 30 days"
-          />
-          <StatCard
-            title="Delivery Rate"
-            value={`${stats.delivery_rate}%`}
-            change={stats.delivery_rate_change}
-            icon={<TrendingUp className="h-5 w-5" />}
-            subtitle={`${stats.delivered_count.toLocaleString()} delivered`}
-          />
-          <StatCard
-            title="Open Rate"
-            value={`${stats.open_rate}%`}
-            change={stats.open_rate_change}
-            icon={<Mail className="h-5 w-5" />}
-            subtitle={`${stats.opened_count.toLocaleString()} opened`}
           />
           <StatCard
             title="Reply Rate"
@@ -467,10 +477,12 @@ export default function Outreach() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={trendData.map(item => ({
-                ...item,
-                date: formatDate(item.date)
-              }))}>
+              <LineChart
+                data={trendData.map((item) => ({
+                  ...item,
+                  date: formatDate(item.date),
+                }))}
+              >
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="date" className="text-xs" />
                 <YAxis className="text-xs" />
@@ -482,10 +494,34 @@ export default function Outreach() {
                   }}
                 />
                 <Legend />
-                <Line type="monotone" dataKey="sent" name="Sent" stroke="hsl(var(--chart-1))" strokeWidth={2} />
-                <Line type="monotone" dataKey="delivered" name="Delivered" stroke="hsl(var(--chart-2))" strokeWidth={2} />
-                <Line type="monotone" dataKey="opened" name="Opened" stroke="hsl(var(--chart-3))" strokeWidth={2} />
-                <Line type="monotone" dataKey="replied" name="Replied" stroke="hsl(var(--chart-4))" strokeWidth={2} />
+                <Line
+                  type="monotone"
+                  dataKey="sent"
+                  name="Sent"
+                  stroke="hsl(var(--chart-1))"
+                  strokeWidth={2}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="delivered"
+                  name="Delivered"
+                  stroke="hsl(var(--chart-2))"
+                  strokeWidth={2}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="opened"
+                  name="Opened"
+                  stroke="hsl(var(--chart-3))"
+                  strokeWidth={2}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="replied"
+                  name="Replied"
+                  stroke="hsl(var(--chart-4))"
+                  strokeWidth={2}
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -509,8 +545,16 @@ export default function Outreach() {
                   }}
                 />
                 <Legend />
-                <Bar dataKey="smartlead" name="Smartlead" fill="hsl(var(--chart-1))" />
-                <Bar dataKey="heyreach" name="Heyreach" fill="hsl(var(--chart-2))" />
+                <Bar
+                  dataKey="smartlead"
+                  name="Smartlead"
+                  fill="hsl(var(--chart-1))"
+                />
+                <Bar
+                  dataKey="heyreach"
+                  name="Heyreach"
+                  fill="hsl(var(--chart-2))"
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -524,35 +568,64 @@ export default function Outreach() {
         </CardHeader>
         <CardContent>
           {leadsLoading ? (
-            <div className="text-center py-8 text-muted-foreground">Loading leads...</div>
+            <div className="text-center py-8 text-muted-foreground">
+              Loading leads...
+            </div>
           ) : leadsError ? (
             <div className="text-center py-8">
               <p className="text-destructive mb-4">{leadsError}</p>
-              <Button variant="outline" onClick={fetchInReviewLeads}>Retry</Button>
+              <Button variant="outline" onClick={fetchInReviewLeads}>
+                Retry
+              </Button>
             </div>
           ) : inReviewLeads.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">No leads in review</div>
+            <div className="text-center py-8 text-muted-foreground">
+              No leads in review
+            </div>
           ) : (
             <>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Name</th>
-                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Company Name</th>
-                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Stage</th>
-                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Segment</th>
-                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Opportunity</th>
-                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Cluster</th>
-                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">User Info</th>
-                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Current Campaigns</th>
-                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Outreach Channel</th>
-                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Action</th>
+                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                        Name
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                        Company Name
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                        Stage
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                        Segment
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                        Opportunity
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                        Cluster
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                        User Info
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                        Current Campaigns
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                        Outreach Channel
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                        Action
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {inReviewLeads.map((lead) => (
-                      <tr key={lead.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+                      <tr
+                        key={lead.id}
+                        className="border-b border-border hover:bg-muted/50 transition-colors"
+                      >
                         <td className="py-3 px-4 font-medium">
                           {lead.first_name || ""} {lead.last_name || ""}
                         </td>
@@ -564,45 +637,69 @@ export default function Outreach() {
                           <div className="font-medium">{lead.stage || "-"}</div>
                         </td>
                         <td className="py-3 px-4 text-sm">
-                          <div className="font-medium">{lead.segment || "-"}</div>
+                          <div className="font-medium">
+                            {lead.segment || "-"}
+                          </div>
                         </td>
                         <td className="py-3 px-4 text-sm">
-                          <div className="font-medium">{lead.opportunity || "-"}</div>
+                          <div className="font-medium">
+                            {lead.opportunity || "-"}
+                          </div>
                         </td>
                         <td className="py-3 px-4 text-sm">
-                          <div className="font-medium">{lead.cluster || "-"}</div>
+                          <div className="font-medium">
+                            {lead.cluster || "-"}
+                          </div>
                         </td>
                         {/* Rest of your existing columns */}
                         <td className="py-3 px-4">
                           <Popover>
                             <PopoverTrigger asChild>
                               <Button variant="outline" size="sm">
-                                {linkedinUrls[lead.id] || emailAddresses[lead.id] ? "Edit Info" : "Add Info"}
+                                {linkedinUrls[lead.id] ||
+                                emailAddresses[lead.id]
+                                  ? "Edit Info"
+                                  : "Add Info"}
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-80">
                               <div className="space-y-4">
                                 <div className="space-y-2">
-                                  <Label htmlFor={`linkedin-${lead.id}`}>LinkedIn URL</Label>
+                                  <Label htmlFor={`linkedin-${lead.id}`}>
+                                    LinkedIn URL
+                                  </Label>
                                   <Input
                                     id={`linkedin-${lead.id}`}
                                     placeholder="https://linkedin.com/in/..."
                                     value={linkedinUrls[lead.id] || ""}
-                                    onChange={(e) => handleLinkedinUrlChange(lead.id, e.target.value)}
+                                    onChange={(e) =>
+                                      handleLinkedinUrlChange(
+                                        lead.id,
+                                        e.target.value
+                                      )
+                                    }
                                   />
                                 </div>
                                 <div className="space-y-2">
-                                  <Label htmlFor={`email-${lead.id}`}>Email Address</Label>
+                                  <Label htmlFor={`email-${lead.id}`}>
+                                    Email Address
+                                  </Label>
                                   <Input
                                     id={`email-${lead.id}`}
                                     type="email"
                                     placeholder="example@domain.com"
                                     value={emailAddresses[lead.id] || ""}
-                                    onChange={(e) => handleEmailAddressChange(lead.id, e.target.value)}
+                                    onChange={(e) =>
+                                      handleEmailAddressChange(
+                                        lead.id,
+                                        e.target.value
+                                      )
+                                    }
                                   />
                                 </div>
                                 <p className="text-xs text-muted-foreground">
-                                  Add LinkedIn URL for Heyreach, email for Smartlead, or both for all options
+                                  Add LinkedIn URL for Heyreach, email for
+                                  Smartlead, or both for all options
                                 </p>
                               </div>
                             </PopoverContent>
@@ -611,21 +708,30 @@ export default function Outreach() {
                         <td className="py-3 px-4">
                           <Select
                             value={selectedCampaigns[lead.id] || ""}
-                            onValueChange={(value) => handleCampaignChange(lead.id, value)}
-                            disabled={campaignsLoading || !canSelectCampaign(lead.id)}
+                            onValueChange={(value) =>
+                              handleCampaignChange(lead.id, value)
+                            }
+                            disabled={
+                              campaignsLoading || !canSelectCampaign(lead.id)
+                            }
                           >
                             <SelectTrigger className="w-[200px]">
                               <SelectValue
                                 placeholder={
-                                  campaignsLoading ? "Loading..." :
-                                    !canSelectCampaign(lead.id) ? "Add user info first" :
-                                      "Select campaign"
+                                  campaignsLoading
+                                    ? "Loading..."
+                                    : !canSelectCampaign(lead.id)
+                                    ? "Add user info first"
+                                    : "Select campaign"
                                 }
                               />
                             </SelectTrigger>
                             <SelectContent>
                               {campaigns.map((campaign) => (
-                                <SelectItem key={campaign.id} value={campaign.id.toString()}>
+                                <SelectItem
+                                  key={campaign.id}
+                                  value={campaign.id.toString()}
+                                >
                                   {campaign.name}
                                 </SelectItem>
                               ))}
@@ -635,27 +741,43 @@ export default function Outreach() {
                         <td className="py-3 px-4">
                           <Select
                             value={selectedChannels[lead.id] || ""}
-                            onValueChange={(value) => handleChannelChange(lead.id, value)}
-                            disabled={getAvailableChannels(lead.id).length === 0}
+                            onValueChange={(value) =>
+                              handleChannelChange(lead.id, value)
+                            }
+                            disabled={
+                              getAvailableChannels(lead.id).length === 0
+                            }
                           >
                             <SelectTrigger className="w-[180px]">
                               <SelectValue
                                 placeholder={
-                                  getAvailableChannels(lead.id).length === 0 ?
-                                    "Add user info first" :
-                                    "Select channel"
+                                  getAvailableChannels(lead.id).length === 0
+                                    ? "Add user info first"
+                                    : "Select channel"
                                 }
                               />
                             </SelectTrigger>
                             <SelectContent>
-                              {getAvailableChannels(lead.id).includes("smartlead") && (
-                                <SelectItem value="smartlead">Smartlead</SelectItem>
+                              {getAvailableChannels(lead.id).includes(
+                                "smartlead"
+                              ) && (
+                                <SelectItem value="smartlead">
+                                  Smartlead
+                                </SelectItem>
                               )}
-                              {getAvailableChannels(lead.id).includes("heyreach") && (
-                                <SelectItem value="heyreach">Heyreach</SelectItem>
+                              {getAvailableChannels(lead.id).includes(
+                                "heyreach"
+                              ) && (
+                                <SelectItem value="heyreach">
+                                  Heyreach
+                                </SelectItem>
                               )}
-                              {getAvailableChannels(lead.id).includes("multichannel") && (
-                                <SelectItem value="multichannel">Multichannel</SelectItem>
+                              {getAvailableChannels(lead.id).includes(
+                                "multichannel"
+                              ) && (
+                                <SelectItem value="multichannel">
+                                  Multichannel
+                                </SelectItem>
                               )}
                             </SelectContent>
                           </Select>

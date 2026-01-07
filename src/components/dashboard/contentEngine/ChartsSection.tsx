@@ -42,7 +42,7 @@ export const ChartsSection = ({ productionTrendData, topPerformingData }: Charts
                             <Area type="monotone" dataKey="blogs" name="Blogs" stackId="1" stroke="hsl(var(--chart-1))" fill="hsl(var(--chart-1))" />
                             <Area type="monotone" dataKey="social" name="Social" stackId="1" stroke="hsl(var(--chart-2))" fill="hsl(var(--chart-2))" />
                             <Area type="monotone" dataKey="newsletters" name="Newsletters" stackId="1" stroke="hsl(var(--chart-3))" fill="hsl(var(--chart-3))" />
-                            <Area type="monotone" dataKey="graphics" name="Graphics" stackId="1" stroke="hsl(var(--chart-4))" fill="hsl(var(--chart-4))" />
+                          
                         </AreaChart>
                     </ResponsiveContainer>
                 </CardContent>

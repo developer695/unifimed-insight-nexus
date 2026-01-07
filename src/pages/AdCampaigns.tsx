@@ -156,7 +156,7 @@ export default function AdCampaigns() {
 
       {/* KPI Cards */}
       {campaignStats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
           <StatCard
             title="Total Ad Spend"
             value={`$${(campaignStats.total_ad_spend / 1000).toFixed(1)}K`}
@@ -164,7 +164,7 @@ export default function AdCampaigns() {
             icon={<DollarSign className="h-5 w-5" />}
             subtitle="Last 30 days"
           />
-          <StatCard
+          {/* <StatCard
             title="Total Conversions"
             value={campaignStats.total_conversions.toLocaleString()}
             change={campaignStats.total_conversions_change}
@@ -177,7 +177,7 @@ export default function AdCampaigns() {
             change={campaignStats.avg_roas_change}
             icon={<TrendingUp className="h-5 w-5" />}
             subtitle={`$${(campaignStats.revenue_generated / 1000).toFixed(1)}K revenue`}
-          />
+          /> */}
           <StatCard
             title="Avg Cost/Conv"
             value={`$${campaignStats.avg_cost_per_conversion.toFixed(2)}`}
