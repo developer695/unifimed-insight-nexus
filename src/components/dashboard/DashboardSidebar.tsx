@@ -71,14 +71,19 @@ const navItems: NavItem[] = [
     href: "/ad-campaigns",
     icon: Target,
   },
-  {
-    title: "Linkedin Messages",
-    href: "/linkedin-messages",
-    icon: Linkedin,
-  },
-  {
-    title: "Email Messages",
-    href: "/email-messages",
+  // {
+  //   title: "Linkedin Messages",
+  //   href: "/linkedin-messages",
+  //   icon: Linkedin,
+  // },
+  // {
+  //   title: "Email Messages",
+  //   href: "/email-messages",
+  //   icon: MailCheck,
+  // },
+   {
+    title: "Messages",
+    href: "/messages",
     icon: MailCheck,
   },
   {

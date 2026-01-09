@@ -76,10 +76,22 @@ export interface TopKeyword {
   volume: number;
   competition: number;
   category: string;
-  rank: number | null;
+  score: number | null;
   created_at: string;
   updated_at: string;
 }
+export interface KeywordRecord {
+  id: number;
+  created_at: string;
+  rank?: string | null;
+  keyword?: string | null;
+  score?: string | null;
+  frequency?: string | null;
+  intent?: string | null;
+  category?: string | null;
+  priority?: string | null;
+}
+
 export default function SEOKeywords() {
   const navigate = useNavigate();
 
@@ -87,6 +99,7 @@ export default function SEOKeywords() {
   const [keywordVolumeData, setKeywordVolumeData] = useState<KeywordVolume[]>([]);
   const [discoveryTrendData, setDiscoveryTrendData] = useState<KeywordDiscoveryTrend[]>([]);
   const [topKeywordsData, setTopKeywordsData] = useState<TopKeyword[]>([]);
+  const [keywordsData, setKeywordsData] = useState<KeywordRecord[]>([]);
   const [filteredKeywords, setFilteredKeywords] = useState<TopKeyword[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -167,6 +180,41 @@ export default function SEOKeywords() {
       setLoading(false);
     }
   };
+// In fetchKeyword, add more logging:
+const fetchKeyword = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+    
+    console.log("Fetching from Keywords table...");
+    
+    const { data, error } = await supabase
+      .from("Keywords")  // Try lowercase: "keywords"
+      .select("*")
+   
+      .order("id", { ascending: true });
+
+    console.log("Response:", { data, error });
+    
+    if (error) throw error;
+
+    setKeywordsData(data || []);
+  } catch (err) {
+    console.error("fetchKeyword error:", err);
+    setError("Failed to load keywords");
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  fetchKeyword();
+}, []);
+const sortedKeywords = [...keywordsData].sort((a, b) => {
+  const rankA = Number(a.rank) || 0;
+  const rankB = Number(b.rank) || 0;
+  return rankA - rankB;
+});
 
   if (loading) {
     return (
@@ -176,6 +224,7 @@ export default function SEOKeywords() {
     );
   }
 
+  console.log("item dara ",keywordsData);
   if (error) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-200px)]">
@@ -186,6 +235,7 @@ export default function SEOKeywords() {
       </div>
     );
   }
+
 
   return (
     <div className="space-y-6">
@@ -240,8 +290,8 @@ export default function SEOKeywords() {
       )}
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+      <div className="">
+        {/* <Card>
           <CardHeader>
             <CardTitle>Keyword Volume vs Competition</CardTitle>
           </CardHeader>
@@ -274,7 +324,35 @@ export default function SEOKeywords() {
               </ScatterChart>
             </ResponsiveContainer>
           </CardContent>
-        </Card>
+        </Card> */}
+
+<table className="w-full border-collapse">
+  <thead>
+    <tr>
+      <th className="text-left py-3 px-4">Rank</th>
+      <th className="text-left py-3 px-4">Keyword</th>
+      <th className="text-right py-3 px-4">Score</th>
+      <th className="text-right py-3 px-4">Frequency</th>
+      <th className="text-right py-3 px-4">Intent</th>
+      <th className="text-right py-3 px-4">Category</th>
+      <th className="text-right py-3 px-4">Priority</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {sortedKeywords.map((item) => (
+      <tr key={item.id} className="border-t">
+        <td className="py-3 px-4">{item.rank}</td>
+        <td className="py-3 px-4">{item.keyword}</td>
+        <td className="py-3 px-4 text-right">{item.score}</td>
+        <td className="py-3 px-4 text-right">{item.frequency}</td>
+        <td className="py-3 px-4 text-right">{item?.intent}</td>
+        <td className="py-3 px-4 text-right">{item.category}</td>
+        <td className="py-3 px-4 text-right">{item.priority}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
 
         {/* <Card>
           <CardHeader>

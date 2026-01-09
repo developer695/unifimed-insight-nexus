@@ -36,6 +36,7 @@ import EditLandingPage from './pages/EditLandingPage';
 import HomePage from './pages/HomePage';
 import LinkedinReplyMessages from './pages/LinkedinReplyMessages';
 import EmailReplyMessages from './pages/EmailReplyMessages';
+import Message from './components/dashboard/Message';
 
 declare global {
   interface Window {
@@ -92,6 +93,7 @@ const App = () => {
               <Route path='scheduling' element={<SchedulingMeetings />} />
               <Route path='seo-keywords' element={<SEOKeywords />} />
               <Route path='content' element={<ContentEngine />} />
+              <Route path='messages' element={<Message />} />
               <Route path='content/content-upload' element={<ContentUplaodPage />} />
               <Route path='ad-campaigns' element={<AdCampaigns />} />
               <Route

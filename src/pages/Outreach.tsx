@@ -494,13 +494,13 @@ export default function Outreach() {
                   }}
                 />
                 <Legend />
-                <Line
+                {/* <Line
                   type="monotone"
                   dataKey="sent"
                   name="Sent"
                   stroke="hsl(var(--chart-1))"
                   strokeWidth={2}
-                />
+                /> */}
                 <Line
                   type="monotone"
                   dataKey="delivered"
@@ -508,13 +508,13 @@ export default function Outreach() {
                   stroke="hsl(var(--chart-2))"
                   strokeWidth={2}
                 />
-                <Line
+                {/* <Line
                   type="monotone"
                   dataKey="opened"
                   name="Opened"
                   stroke="hsl(var(--chart-3))"
                   strokeWidth={2}
-                />
+                /> */}
                 <Line
                   type="monotone"
                   dataKey="replied"
@@ -533,7 +533,7 @@ export default function Outreach() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={platformData}>
+              <BarChart data={platformData.filter((p) => !["sent", "opened"].includes(p.metric.toLowerCase()))}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="metric" className="text-xs" />
                 <YAxis className="text-xs" />
