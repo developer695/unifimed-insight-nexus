@@ -15,6 +15,7 @@ import {
   Search,
   Upload,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import {
   ScatterChart,
@@ -105,6 +106,41 @@ export default function SEOKeywords() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const handleRefresh = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        import.meta.env.VITE_N8N_WEBSITE_TRACKING_WEBHOOK_URL,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+
+            action: 'refresh',
+            timestamp: new Date().toISOString(),
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Webhook request failed');
+      }
+
+      const data = await response.json();
+      console.log('Webhook response:', data);
+
+
+
+    } catch (error) {
+      console.error('Error calling webhook:', error);
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -180,41 +216,41 @@ export default function SEOKeywords() {
       setLoading(false);
     }
   };
-// In fetchKeyword, add more logging:
-const fetchKeyword = async () => {
-  try {
-    setLoading(true);
-    setError(null);
-    
-    console.log("Fetching from Keywords table...");
-    
-    const { data, error } = await supabase
-      .from("Keywords")  // Try lowercase: "keywords"
-      .select("*")
-   
-      .order("id", { ascending: true });
+  // In fetchKeyword, add more logging:
+  const fetchKeyword = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    console.log("Response:", { data, error });
-    
-    if (error) throw error;
+      console.log("Fetching from Keywords table...");
 
-    setKeywordsData(data || []);
-  } catch (err) {
-    console.error("fetchKeyword error:", err);
-    setError("Failed to load keywords");
-  } finally {
-    setLoading(false);
-  }
-};
+      const { data, error } = await supabase
+        .from("Keywords")  // Try lowercase: "keywords"
+        .select("*")
 
-useEffect(() => {
-  fetchKeyword();
-}, []);
-const sortedKeywords = [...keywordsData].sort((a, b) => {
-  const rankA = Number(a.rank) || 0;
-  const rankB = Number(b.rank) || 0;
-  return rankA - rankB;
-});
+        .order("id", { ascending: true });
+
+      console.log("Response:", { data, error });
+
+      if (error) throw error;
+
+      setKeywordsData(data || []);
+    } catch (err) {
+      console.error("fetchKeyword error:", err);
+      setError("Failed to load keywords");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchKeyword();
+  }, []);
+  const sortedKeywords = [...keywordsData].sort((a, b) => {
+    const rankA = Number(a.rank) || 0;
+    const rankB = Number(b.rank) || 0;
+    return rankA - rankB;
+  });
 
   if (loading) {
     return (
@@ -224,7 +260,7 @@ const sortedKeywords = [...keywordsData].sort((a, b) => {
     );
   }
 
-  console.log("item dara ",keywordsData);
+  console.log("item dara ", keywordsData);
   if (error) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-200px)]">
@@ -288,7 +324,19 @@ const sortedKeywords = [...keywordsData].sort((a, b) => {
           />
         </div>
       )}
+      <div className="flex justify-between items-center">
+        <div>
 
+        </div>
+        <Button
+          variant="outline"
+          onClick={handleRefresh}
+          disabled={loading}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
       {/* Charts */}
       <div className="">
         {/* <Card>
@@ -326,33 +374,33 @@ const sortedKeywords = [...keywordsData].sort((a, b) => {
           </CardContent>
         </Card> */}
 
-<table className="w-full border-collapse">
-  <thead>
-    <tr>
-      <th className="text-left py-3 px-4">Rank</th>
-      <th className="text-left py-3 px-4">Keyword</th>
-      <th className="text-right py-3 px-4">Score</th>
-      <th className="text-right py-3 px-4">Frequency</th>
-      <th className="text-right py-3 px-4">Intent</th>
-      <th className="text-right py-3 px-4">Category</th>
-      <th className="text-right py-3 px-4">Priority</th>
-    </tr>
-  </thead>
+        <table className="w-full border-collapse">
+          <thead>
+            <tr>
+              <th className="text-left py-3 px-4">Rank</th>
+              <th className="text-left py-3 px-4">Keyword</th>
+              <th className="text-right py-3 px-4">Score</th>
+              <th className="text-right py-3 px-4">Frequency</th>
+              <th className="text-right py-3 px-4">Intent</th>
+              <th className="text-right py-3 px-4">Category</th>
+              <th className="text-right py-3 px-4">Priority</th>
+            </tr>
+          </thead>
 
-  <tbody>
-    {sortedKeywords.map((item) => (
-      <tr key={item.id} className="border-t">
-        <td className="py-3 px-4">{item.rank}</td>
-        <td className="py-3 px-4">{item.keyword}</td>
-        <td className="py-3 px-4 text-right">{item.score}</td>
-        <td className="py-3 px-4 text-right">{item.frequency}</td>
-        <td className="py-3 px-4 text-right">{item?.intent}</td>
-        <td className="py-3 px-4 text-right">{item.category}</td>
-        <td className="py-3 px-4 text-right">{item.priority}</td>
-      </tr>
-    ))}
-  </tbody>
-</table>
+          <tbody>
+            {sortedKeywords.map((item) => (
+              <tr key={item.id} className="border-t">
+                <td className="py-3 px-4">{item.rank}</td>
+                <td className="py-3 px-4">{item.keyword}</td>
+                <td className="py-3 px-4 text-right">{item.score}</td>
+                <td className="py-3 px-4 text-right">{item.frequency}</td>
+                <td className="py-3 px-4 text-right">{item?.intent}</td>
+                <td className="py-3 px-4 text-right">{item.category}</td>
+                <td className="py-3 px-4 text-right">{item.priority}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
         {/* <Card>
           <CardHeader>
