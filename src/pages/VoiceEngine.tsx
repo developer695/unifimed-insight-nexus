@@ -69,11 +69,9 @@ interface CTAPerformance {
 
 interface RecentContent {
   id: string;
-  title: string;
-  type: string;
-  score: number;
-  status: string;
-  created_at: string;
+  name: string;
+  content_type: string;
+  post_summary: string;
 }
 
 export default function VoiceEngine() {
@@ -134,10 +132,10 @@ export default function VoiceEngine() {
 
       // Fetch recent content
       const { data: contentData, error: contentError } = await supabase
-        .from("recent_content")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(5);
+        .from("agent_5_blog_content")
+        .select("id, name, content_type, post_summary")
+        .eq("status", "POSTED")
+        .order("created_at", { ascending: false });
 
       if (contentError) throw contentError;
       setRecentContent(contentData || []);
@@ -291,7 +289,7 @@ export default function VoiceEngine() {
       {/* Recent Content Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Content Scores</CardTitle>
+          <CardTitle>Posted Content</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -299,16 +297,13 @@ export default function VoiceEngine() {
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
-                    Title
+                    Name
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
-                    Type
-                  </th>
-                  <th className="text-center py-3 px-4 font-medium text-sm text-muted-foreground">
-                    Score
+                    Content Type
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
-                    Status
+                    Post Summary
                   </th>
                 </tr>
               </thead>
@@ -318,31 +313,12 @@ export default function VoiceEngine() {
                     key={content.id}
                     className="border-b border-border hover:bg-muted/50 transition-colors"
                   >
-                    <td className="py-3 px-4 font-medium">{content.title}</td>
-                    <td className="py-3 px-4 text-sm">{content.type}</td>
-                    <td className="py-3 px-4 text-center">
-                      <span
-                        className={`font-semibold ${
-                          content.score >= 90
-                            ? "text-success"
-                            : content.score >= 80
-                            ? "text-primary"
-                            : "text-warning"
-                        }`}
-                      >
-                        {content.score}
-                      </span>
+                    <td className="py-3 px-4 font-medium">{content.name}</td>
+                    <td className="py-3 px-4 text-sm">
+                      {content.content_type}
                     </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                          content.status === "approved"
-                            ? "bg-success/10 text-success"
-                            : "bg-warning/10 text-warning"
-                        }`}
-                      >
-                        {content.status}
-                      </span>
+                    <td className="py-3 px-4 text-sm">
+                      {content.post_summary}
                     </td>
                   </tr>
                 ))}

@@ -266,7 +266,7 @@ const Analytics = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>Integration Data Quality</CardTitle>
           </CardHeader>
@@ -300,7 +300,7 @@ const Analytics = () => {
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
 
       <Card>

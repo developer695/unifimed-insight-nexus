@@ -48,7 +48,7 @@ export const ChartsSection = ({ productionTrendData, topPerformingData }: Charts
                 </CardContent>
             </Card>
 
-            <Card>
+            {/* <Card>
                 <CardHeader>
                     <CardTitle>Top Performing Content</CardTitle>
                 </CardHeader>
@@ -70,7 +70,7 @@ export const ChartsSection = ({ productionTrendData, topPerformingData }: Charts
                         </BarChart>
                     </ResponsiveContainer>
                 </CardContent>
-            </Card>
+            </Card> */}
         </div>
     );
 };

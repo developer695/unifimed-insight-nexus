@@ -30,10 +30,7 @@ import {
   ResponsiveContainer,
   ZAxis,
 } from "recharts";
-import {
-  supabase,
-
-} from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 // Add these interfaces to your existing lib/supabase.ts
 
 export interface SEOKeywordsStats {
@@ -97,47 +94,120 @@ export default function SEOKeywords() {
   const navigate = useNavigate();
 
   const [stats, setStats] = useState<SEOKeywordsStats | null>(null);
-  const [keywordVolumeData, setKeywordVolumeData] = useState<KeywordVolume[]>([]);
-  const [discoveryTrendData, setDiscoveryTrendData] = useState<KeywordDiscoveryTrend[]>([]);
+  const [keywordVolumeData, setKeywordVolumeData] = useState<KeywordVolume[]>(
+    []
+  );
+  const [discoveryTrendData, setDiscoveryTrendData] = useState<
+    KeywordDiscoveryTrend[]
+  >([]);
   const [topKeywordsData, setTopKeywordsData] = useState<TopKeyword[]>([]);
   const [keywordsData, setKeywordsData] = useState<KeywordRecord[]>([]);
   const [filteredKeywords, setFilteredKeywords] = useState<TopKeyword[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshMessage, setRefreshMessage] = useState("");
 
   const handleRefresh = async () => {
-    setLoading(true);
+    setIsRefreshing(true);
+    setRefreshMessage("Sending request to process keywords...");
+
+    // Store the current latest record timestamp/id to detect new data
+    const initialCount = keywordsData.length;
+    const latestId =
+      keywordsData.length > 0 ? Math.max(...keywordsData.map((k) => k.id)) : 0;
+
     try {
-      const response = await fetch(
-        import.meta.env.VITE_N8N_WEBSITE_TRACKING_WEBHOOK_URL,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+      // Fire-and-forget: Send webhook without waiting for full response
+      fetch(import.meta.env.VITE_N8N_WEBSITE_TRACKING_WEBHOOK_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "refresh",
+          timestamp: new Date().toISOString(),
+        }),
+      }).catch((err) => {
+        // Ignore timeout errors since n8n takes >2 minutes
+        console.log(
+          "Webhook sent (response may timeout, but processing continues):",
+          err
+        );
+      });
 
-            action: 'refresh',
-            timestamp: new Date().toISOString(),
-          }),
+      setRefreshMessage("Processing keywords... This may take a few minutes.");
+
+      // Start polling for new data
+      const maxPollingTime = 5 * 60 * 1000; // 5 minutes max
+      const pollInterval = 10 * 1000; // Poll every 10 seconds
+      const startTime = Date.now();
+
+      const pollForNewData = async (): Promise<boolean> => {
+        try {
+          const { data, error } = await supabase
+            .from("Keywords")
+            .select("*")
+            .order("id", { ascending: true });
+
+          if (error) throw error;
+
+          // Check if we have new data
+          const newLatestId =
+            data && data.length > 0
+              ? Math.max(...data.map((k: KeywordRecord) => k.id))
+              : 0;
+
+          if (newLatestId > latestId || (data && data.length > initialCount)) {
+            // New data found!
+            setKeywordsData(data || []);
+            return true;
+          }
+          return false;
+        } catch (err) {
+          console.error("Polling error:", err);
+          return false;
         }
-      );
+      };
 
-      if (!response.ok) {
-        throw new Error('Webhook request failed');
-      }
+      // Polling loop
+      const poll = async () => {
+        while (Date.now() - startTime < maxPollingTime) {
+          const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+          setRefreshMessage(
+            `Processing keywords... (${elapsedSeconds}s elapsed)`
+          );
 
-      const data = await response.json();
-      console.log('Webhook response:', data);
+          const hasNewData = await pollForNewData();
+          if (hasNewData) {
+            setRefreshMessage("New keywords found! Refreshing...");
+            // Also refresh stats
+            await fetchData();
+            setIsRefreshing(false);
+            setRefreshMessage("");
+            return;
+          }
 
+          // Wait before next poll
+          await new Promise((resolve) => setTimeout(resolve, pollInterval));
+        }
 
+        // Timeout reached
+        setRefreshMessage(
+          "Processing is taking longer than expected. Data will update when ready."
+        );
+        setTimeout(() => {
+          setIsRefreshing(false);
+          setRefreshMessage("");
+        }, 3000);
+      };
 
+      poll();
     } catch (error) {
-      console.error('Error calling webhook:', error);
-
-    } finally {
-      setLoading(false);
+      console.error("Error calling webhook:", error);
+      setIsRefreshing(false);
+      setRefreshMessage("");
     }
   };
 
@@ -166,14 +236,16 @@ export default function SEOKeywords() {
       setError(null);
 
       if (!supabase) {
-        throw new Error('Supabase client not initialized. Please check your environment variables.');
+        throw new Error(
+          "Supabase client not initialized. Please check your environment variables."
+        );
       }
 
       // Fetch stats
       const { data: statsData, error: statsError } = await supabase
-        .from('seo_keywords_stats')
-        .select('*')
-        .order('created_at', { ascending: false })
+        .from("seo_keywords_stats")
+        .select("*")
+        .order("created_at", { ascending: false })
         .limit(1)
         .single();
 
@@ -182,9 +254,9 @@ export default function SEOKeywords() {
 
       // Fetch keyword volume data
       const { data: volumeData, error: volumeError } = await supabase
-        .from('keyword_volume')
-        .select('*')
-        .order('volume', { ascending: false });
+        .from("keyword_volume")
+        .select("*")
+        .order("volume", { ascending: false });
 
       if (volumeError) throw volumeError;
       setKeywordVolumeData(volumeData || []);
@@ -208,10 +280,13 @@ export default function SEOKeywords() {
       // if (topError) throw topError;
       // setTopKeywordsData(topData || []);
       // setFilteredKeywords(topData || []);
-
     } catch (err) {
-      console.error('Error fetching data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load data. Please try again.');
+      console.error("Error fetching data:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to load data. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -225,7 +300,7 @@ export default function SEOKeywords() {
       console.log("Fetching from Keywords table...");
 
       const { data, error } = await supabase
-        .from("Keywords")  // Try lowercase: "keywords"
+        .from("Keywords") // Try lowercase: "keywords"
         .select("*")
 
         .order("id", { ascending: true });
@@ -272,9 +347,28 @@ export default function SEOKeywords() {
     );
   }
 
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Loading Overlay when refreshing - Covers only the content area */}
+      {isRefreshing && (
+        <>
+          {/* Backdrop - covers only the content area */}
+          <div className="absolute inset-0 z-40 bg-background/60 backdrop-blur-sm rounded-lg" />
+          {/* Modal - fixed to viewport center */}
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
+            <div className="bg-card border rounded-lg p-8 shadow-lg flex flex-col items-center max-w-md mx-4">
+              <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+              <p className="text-foreground text-center font-medium text-lg">
+                {refreshMessage}
+              </p>
+              <p className="text-muted-foreground text-sm mt-2 text-center">
+                Please wait while n8n processes your request...
+              </p>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -325,21 +419,22 @@ export default function SEOKeywords() {
         </div>
       )}
       <div className="flex justify-between items-center">
-        <div>
-
-        </div>
+        <div></div>
         <Button
           variant="outline"
           onClick={handleRefresh}
-          disabled={loading}
+          disabled={isRefreshing}
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
+          <RefreshCw
+            className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
+          />
+          {isRefreshing ? "Processing..." : "Refresh"}
         </Button>
       </div>
       {/* Charts */}
-      <div className="">
-        {/* <Card>
+      <div className="relative">
+        <div className={isRefreshing ? "blur-sm pointer-events-none" : ""}>
+          {/* <Card>
           <CardHeader>
             <CardTitle>Keyword Volume vs Competition</CardTitle>
           </CardHeader>
@@ -374,33 +469,34 @@ export default function SEOKeywords() {
           </CardContent>
         </Card> */}
 
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              <th className="text-left py-3 px-4">Rank</th>
-              <th className="text-left py-3 px-4">Keyword</th>
-              <th className="text-right py-3 px-4">Score</th>
-              <th className="text-right py-3 px-4">Frequency</th>
-              <th className="text-right py-3 px-4">Intent</th>
-              <th className="text-right py-3 px-4">Category</th>
-              <th className="text-right py-3 px-4">Priority</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {sortedKeywords.map((item) => (
-              <tr key={item.id} className="border-t">
-                <td className="py-3 px-4">{item.rank}</td>
-                <td className="py-3 px-4">{item.keyword}</td>
-                <td className="py-3 px-4 text-right">{item.score}</td>
-                <td className="py-3 px-4 text-right">{item.frequency}</td>
-                <td className="py-3 px-4 text-right">{item?.intent}</td>
-                <td className="py-3 px-4 text-right">{item.category}</td>
-                <td className="py-3 px-4 text-right">{item.priority}</td>
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className="text-left py-3 px-4">Rank</th>
+                <th className="text-left py-3 px-4">Keyword</th>
+                <th className="text-right py-3 px-4">Score</th>
+                <th className="text-right py-3 px-4">Frequency</th>
+                <th className="text-right py-3 px-4">Intent</th>
+                <th className="text-right py-3 px-4">Category</th>
+                <th className="text-right py-3 px-4">Priority</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {sortedKeywords.map((item) => (
+                <tr key={item.id} className="border-t">
+                  <td className="py-3 px-4">{item.rank}</td>
+                  <td className="py-3 px-4">{item.keyword}</td>
+                  <td className="py-3 px-4 text-right">{item.score}</td>
+                  <td className="py-3 px-4 text-right">{item.frequency}</td>
+                  <td className="py-3 px-4 text-right">{item?.intent}</td>
+                  <td className="py-3 px-4 text-right">{item.category}</td>
+                  <td className="py-3 px-4 text-right">{item.priority}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         {/* <Card>
           <CardHeader>
