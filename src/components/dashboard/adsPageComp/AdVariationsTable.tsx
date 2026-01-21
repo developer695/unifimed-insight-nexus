@@ -1,6 +1,7 @@
 import { AdVariation } from "@/types/ads";
 import { AdApprovalActions } from "./AdApprovalActions";
 import { AdStatusBadge } from "./AdStatusBadge";
+import { useState } from "react";
 
 interface AdVariationsTableProps {
     ads: AdVariation[];
@@ -14,7 +15,10 @@ export function AdVariationsTable({
     onStatusChange,
     onViewDetails,
     updatingId
-}: AdVariationsTableProps) {
+
+}: AdVariationsTableProps)
+
+{
     if (ads.length === 0) {
         return (
             <div className="text-center py-8 text-muted-foreground">
@@ -22,7 +26,22 @@ export function AdVariationsTable({
             </div>
         );
     }
-
+const [currentpage, setCurrentpage] = useState<number>(1);
+const itemPergage = 10;
+const indexOfLastItem = currentpage * itemPergage;
+const indexOfFirstItem = indexOfLastItem - itemPergage
+const currentAds = ads.slice(indexOfFirstItem, indexOfLastItem);
+const totalPages = Math.ceil(ads.length / itemPergage);
+const goToNextPage = ()=>{
+    if(currentpage< totalPages){
+        setCurrentpage(currentpage+1)
+    }
+}
+const goToPreviousPage = ()=>{
+    if(currentpage>1){
+        setCurrentpage(currentpage-1)
+    }
+}
     return (
         <div className="overflow-x-auto">
             <table className="w-full">
@@ -37,7 +56,7 @@ export function AdVariationsTable({
                     </tr>
                 </thead>
                 <tbody>
-                    {ads.map((ad) => (
+                    {currentAds.map((ad) => (
                         <tr key={ad.id} className="border-b border-border hover:bg-muted/50 transition-colors">
                             <td className="py-3 px-4 font-medium">
                                 <div className="font-medium">{ad.campaign_name}</div>
@@ -88,6 +107,38 @@ export function AdVariationsTable({
                     ))}
                 </tbody>
             </table>
+             <div className="flex justify-center items-center gap-4 mt-4">
+  {/* Previous */}
+  <button
+    onClick={goToPreviousPage}
+    disabled={currentpage === 1}
+    className={`px-4 py-2 border rounded
+      ${currentpage === 1
+        ? "opacity-50 cursor-not-allowed"
+        : "hover:bg-blue-500 hover:text-white"}
+    `}
+  >
+    Previous
+  </button>
+
+  {/* Page info */}
+  <span className="text-sm">
+    Page {currentpage} of {totalPages}
+  </span>
+
+  {/* Next */}
+  <button
+    onClick={goToNextPage}
+    disabled={currentpage === totalPages}
+    className={`px-4 py-2 border rounded
+      ${currentpage === totalPages
+        ? "opacity-50 cursor-not-allowed"
+        : "hover:bg-blue-500 hover:text-white"}
+    `}
+  >
+    Next
+  </button>
+</div>
         </div>
     );
 }

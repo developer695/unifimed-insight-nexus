@@ -121,9 +121,25 @@ export default function Outreach() {
   const [trendData, setTrendData] = useState<OutreachTrend[]>([]);
   const [platformData, setPlatformData] = useState<PlatformComparison[]>([]);
   const [campaignsData, setCampaignsData] = useState<OutreachCampaign[]>([]);
+const [inReviewLeads, setInReviewLeads] = useState<InReviewLead[]>([]);
+
+
+
+const [leadsPage, setLeadsPage] = useState(1);
+const leadsPerPage = 10;
+
+const leadsTotalPages = Math.ceil(inReviewLeads.length / leadsPerPage);
+
+const leadsStartIndex = (leadsPage - 1) * leadsPerPage;
+const leadsEndIndex = leadsStartIndex + leadsPerPage;
+
+const paginatedLeads = inReviewLeads.slice(
+  leadsStartIndex,
+  leadsEndIndex
+);
 
   // In Review Leads states
-  const [inReviewLeads, setInReviewLeads] = useState<InReviewLead[]>([]);
+
   const [selectedChannels, setSelectedChannels] = useState<
     Record<number, string>
   >({});
@@ -287,6 +303,7 @@ export default function Outreach() {
     setSelectedCampaigns((prev) => ({ ...prev, [leadId]: campaignId }));
   };
 
+
   const handleLinkedinUrlChange = (leadId: number, url: string) => {
     setLinkedinUrls((prev) => ({ ...prev, [leadId]: url }));
   };
@@ -359,6 +376,7 @@ export default function Outreach() {
       setIsUpdating(false);
     }
   };
+
 
   const hasChanges = [
     ...Object.keys(selectedChannels),
@@ -449,7 +467,7 @@ export default function Outreach() {
         </div>
       </div>
 
-      {/* KPI Cards */}
+    
      {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <StatCard
@@ -621,7 +639,7 @@ export default function Outreach() {
                     </tr>
                   </thead>
                   <tbody>
-                    {inReviewLeads.map((lead) => (
+                    {paginatedLeads.map((lead) => (
                       <tr
                         key={lead.id}
                         className="border-b border-border hover:bg-muted/50 transition-colors"
@@ -795,7 +813,28 @@ export default function Outreach() {
                     ))}
                   </tbody>
                 </table>
+                
               </div>
+ {
+            leadsTotalPages > 1 && (
+              <div className="flex justify-end space-x-2 mt-4">
+                <Button
+                  onClick={() => setLeadsPage(leadsPage - 1)}
+                  disabled={leadsPage === 1}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm">
+                  Page {leadsPage} of {leadsTotalPages}
+                </span>
+                <Button
+                  onClick={() => setLeadsPage(leadsPage + 1)}
+                  disabled={leadsPage === leadsTotalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
             </>
           )}
         </CardContent>

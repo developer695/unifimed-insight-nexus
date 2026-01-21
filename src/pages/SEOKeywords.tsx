@@ -102,12 +102,27 @@ export default function SEOKeywords() {
   >([]);
   const [topKeywordsData, setTopKeywordsData] = useState<TopKeyword[]>([]);
   const [keywordsData, setKeywordsData] = useState<KeywordRecord[]>([]);
+  const [currentpage, setCurrentpage] = useState<number>(1);
+  const itemPergage = 10;
+  const goToNextPage = ()=>{
+    if(currentpage<totalPages){
+      setCurrentpage(currentpage+1)
+    }
+  }
+  const goToPreviousPage = ()=>{
+    if(currentpage>1){
+      setCurrentpage(currentpage-1)
+    }
+  }
   const [filteredKeywords, setFilteredKeywords] = useState<TopKeyword[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshMessage, setRefreshMessage] = useState("");
+const indexOfLastItem = currentpage * itemPergage
+const indexOfFirstItem = indexOfLastItem - itemPergage 
+
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -326,7 +341,11 @@ export default function SEOKeywords() {
     const rankB = Number(b.rank) || 0;
     return rankA - rankB;
   });
-
+const currentKeywords = sortedKeywords.slice(
+  indexOfFirstItem,
+  indexOfLastItem
+)
+const totalPages = Math.ceil(sortedKeywords.length / itemPergage);
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-200px)]">
@@ -369,7 +388,7 @@ export default function SEOKeywords() {
         </>
       )}
 
-      {/* Page Header */}
+    
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">SEO Keywords</h1>
@@ -483,7 +502,7 @@ export default function SEOKeywords() {
             </thead>
 
             <tbody>
-              {sortedKeywords.map((item) => (
+              {currentKeywords.map((item) => (
                 <tr key={item.id} className="border-t">
                   <td className="py-3 px-4">{item.rank}</td>
                   <td className="py-3 px-4">{item.keyword}</td>
@@ -496,6 +515,40 @@ export default function SEOKeywords() {
               ))}
             </tbody>
           </table>
+ <div className="flex justify-center items-center gap-4 mt-4">
+  {/* Previous */}
+  <button
+    onClick={goToPreviousPage}
+    disabled={currentpage === 1}
+    className={`px-4 py-2 border rounded
+      ${currentpage === 1
+        ? "opacity-50 cursor-not-allowed"
+        : "hover:bg-blue-500 hover:text-white"}
+    `}
+  >
+    Previous
+  </button>
+
+  {/* Page info */}
+  <span className="text-sm">
+    Page {currentpage} of {totalPages}
+  </span>
+
+  {/* Next */}
+  <button
+    onClick={goToNextPage}
+    disabled={currentpage === totalPages}
+    className={`px-4 py-2 border rounded
+      ${currentpage === totalPages
+        ? "opacity-50 cursor-not-allowed"
+        : "hover:bg-blue-500 hover:text-white"}
+    `}
+  >
+    Next
+  </button>
+</div>
+
+
         </div>
 
         {/* <Card>
