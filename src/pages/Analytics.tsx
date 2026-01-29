@@ -69,7 +69,7 @@ const Analytics = () => {
       setErrorReports(null);
 
       const { data, error } = await supabase
-        .from("scheduled_reports")
+        .from("Agent 9: Analytics & Reporting Engine")
         .select("*")
         .order("name", { ascending: true });  // use any column that really exists
 
@@ -368,36 +368,31 @@ const Analytics = () => {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 font-semibold">Report Name</th>
-                  <th className="text-left py-3 px-4 font-semibold">Frequency</th>
-                  <th className="text-left py-3 px-4 font-semibold">Recipients</th>
-                  <th className="text-left py-3 px-4 font-semibold">Last Sent</th>
-                  <th className="text-left py-3 px-4 font-semibold">Template</th>
-                  <th className="text-left py-3 px-4 font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {scheduledReports.map((report, idx) => (
-                  <tr key={idx} className="border-b border-border hover:bg-muted/50">
-                    <td className="py-3 px-4 font-medium">{report.name}</td>
-                    <td className="py-3 px-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                        {report.frequency}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-muted-foreground">{report.recipients}</td>
-                    <td className="py-3 px-4 text-muted-foreground">{report?.last_sent}</td>
-                    <td className="py-3 px-4">{report.template}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm">Edit</Button>
-                        <Button variant="ghost" size="sm">Run Now</Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+  <tr>
+    <th>Date</th>
+    <th>Total Leads</th>
+    <th>Qualified</th>
+    <th>Meetings</th>
+    <th>Active Campaigns</th>
+    <th>Ad Budget</th>
+    <th>High Alerts</th>
+  </tr>
+</thead>
+           <tbody>
+  {scheduledReports.map((row: any) => (
+    <tr key={row.id}>
+      <td>{new Date(row.created_at).toLocaleDateString()}</td>
+      <td>{row.total_leads}</td>
+      <td>{row.qualified_leads}</td>
+      <td>{row.meetings_scheduled}</td>
+      <td>{row.active_campaigns}</td>
+      <td>${row.total_ad_budget}</td>
+      <td className="text-red-500 font-semibold">
+        {row.high_severity_alerts}
+      </td>
+    </tr>
+  ))}
+</tbody>
             </table>
           </div>
         </CardContent>

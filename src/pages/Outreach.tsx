@@ -817,14 +817,14 @@ const paginatedLeads = inReviewLeads.slice(
               </div>
  {
             leadsTotalPages > 1 && (
-              <div className="flex justify-end space-x-2 mt-4">
+              <div className="flex justify-center space-x-2 mt-4">
                 <Button
                   onClick={() => setLeadsPage(leadsPage - 1)}
                   disabled={leadsPage === 1}
                 >
                   Previous
                 </Button>
-                <span className="text-sm">
+                <span className="text-sm   flex items-center justify-center px-2">
                   Page {leadsPage} of {leadsTotalPages}
                 </span>
                 <Button

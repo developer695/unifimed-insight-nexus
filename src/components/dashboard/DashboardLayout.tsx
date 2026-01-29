@@ -74,13 +74,13 @@ export function DashboardLayout() {
             <Button variant="ghost" size="icon" className="md:hidden">
               <Menu className="h-5 w-5" />
             </Button>
-            <div className="relative flex-1">
+            {/* <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="search, campaigns, content..."
                 className="pl-9 bg-background"
               />
-            </div>
+            </div> */}
           </div>
 
           <div className="flex items-center gap-3">
