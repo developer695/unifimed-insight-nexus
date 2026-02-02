@@ -148,6 +148,11 @@ export default function AdCampaigns() {
 
   const adminName = user?.email?.split("@")[0] || "Admin";
 
+  // Calculate total budget from all campaigns
+  const totalBudget =
+    googleAds.reduce((sum, ad) => sum + (ad.budget_micros / 1000000), 0) +
+    linkedinCampaigns.reduce((sum, campaign) => sum + (campaign.total_budget || campaign.daily_budget || 0), 0);
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -185,10 +190,10 @@ export default function AdCampaigns() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
             <StatCard
               title="Total Ad Spend"
-              value={`$${(campaignStats.total_ad_spend / 1000).toFixed(1)}K`}
+              value={`$${totalBudget.toFixed(2)}`}
               change={campaignStats.total_ad_spend_change}
               icon={<DollarSign className="h-5 w-5" />}
-              subtitle="Combined spend across all platforms"
+              subtitle={`Budget: $${totalBudget.toFixed(2)} • Combined spend across all platforms`}
             />
             {/* <StatCard
               title="Total Conversions"
@@ -204,13 +209,13 @@ export default function AdCampaigns() {
               icon={<TrendingUp className="h-5 w-5" />}
               subtitle={`$${(campaignStats.revenue_generated / 1000).toFixed(1)}K revenue`}
             /> */}
-            <StatCard
+            {/* <StatCard
               title="Avg Cost per Conversion"
               value={`$${campaignStats.avg_cost_per_conversion.toFixed(2)}`}
               change={campaignStats.avg_cost_per_conversion_change}
               icon={<MousePointerClick className="h-5 w-5" />}
               subtitle="Lower is better • Efficiency metric"
-            />
+            /> */}
           </div>
         </div>
       )}

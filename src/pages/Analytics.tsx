@@ -195,55 +195,57 @@ console.log("scheduledReports",scheduledReports);
         <p className="text-muted-foreground">Cross-platform insights, report generation, and data health monitoring</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {loadingStats ? (
-          <div className="col-span-4 text-sm text-muted-foreground">
-            Loading dashboard stats…
-          </div>
-        ) : errorStats ? (
-          <div className="col-span-4 text-sm text-destructive">
-            {errorStats}
-          </div>
-        ) : dashboardStats ? (
-          <>
-            <div className="h-full">
-            <StatCard
-              title="Reports Generated"
-              value={dashboardStats.reports_generated?.toString() ?? "—"}
-              change={dashboardStats.reports_generated_change ?? 0}
-              icon={<FileText className="h-4 w-4" />}
-            />
-            <StatCard
-              title="Avg Generation Time"
-              value={dashboardStats.avg_generation_time ?? "—"}
-              change={dashboardStats.avg_generation_time_change ?? 0}
-              icon={<Clock className="h-4 w-4" />}
-            />
-            <StatCard
-              title="Data Quality Score"
-              value={
-                dashboardStats.data_quality_score !== null &&
-                  dashboardStats.data_quality_score !== undefined
-                  ? dashboardStats.data_quality_score.toString()
-                  : "—"
-              }
-              change={dashboardStats.data_quality_score_change ?? 0}
-              icon={<Database className="h-4 w-4" />}
-            />
-            <StatCard
-              title="Marketing ROI"
-              value={dashboardStats.marketing_roi ?? "—"}
-              change={dashboardStats.marketing_roi_change ?? 0}
-              icon={<TrendingUp className="h-4 w-4" />}
-            />
-            </div>
-          </>
-        ) : (
-          <div className="col-span-4 text-sm text-muted-foreground">
-            No dashboard stats found.
-          </div>
-        )}
-      </div>
+  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+  {loadingStats ? (
+    <div className="col-span-full text-sm text-muted-foreground">
+      Loading dashboard stats…
+    </div>
+  ) : errorStats ? (
+    <div className="col-span-full text-sm text-destructive">
+      {errorStats}
+    </div>
+  ) : dashboardStats ? (
+    <>
+      <StatCard
+        title="Reports Generated"
+        value={dashboardStats.reports_generated?.toString() ?? "—"}
+        change={dashboardStats.reports_generated_change ?? 0}
+        icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+      />
+
+      <StatCard
+        title="Avg Generation Time"
+        value={dashboardStats.avg_generation_time ?? "—"}
+        change={dashboardStats.avg_generation_time_change ?? 0}
+        icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+      />
+
+      <StatCard
+        title="Data Quality Score"
+        value={
+          dashboardStats.data_quality_score !== null &&
+          dashboardStats.data_quality_score !== undefined
+            ? dashboardStats.data_quality_score.toString()
+            : "—"
+        }
+        change={dashboardStats.data_quality_score_change ?? 0}
+        icon={<Database className="h-4 w-4 text-muted-foreground" />}
+      />
+
+      <StatCard
+        title="Marketing ROI"
+        value={dashboardStats.marketing_roi ?? "—"}
+        change={dashboardStats.marketing_roi_change ?? 0}
+        icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
+      />
+    </>
+  ) : (
+    <div className="col-span-full text-sm text-muted-foreground">
+      No dashboard stats found.
+    </div>
+  )}
+</div>
+
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="h-[450px] flex flex-col">

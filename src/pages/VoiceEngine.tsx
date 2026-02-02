@@ -26,6 +26,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { createClient } from "@supabase/supabase-js";
+import { log } from "console";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -122,6 +123,8 @@ const [stats, setStats] = useState<VoiceEngineStats[]>([]);
   >([]);
   const [googleTotal, setGoogleTotal] = useState(0);
 const [linkedinTotal, setLinkedinTotal] = useState(0);
+const [sumcontentData, setSumcontentData] = useState(0);
+const [linedinPostData,setLinkedinPostData]= useState(0);
 
   const [ctaPerformance, setCTAPerformance] = useState<CTAPerformance[]>([]);
   const [recentContent, setRecentContent] = useState<RecentContent[]>([]);
@@ -133,7 +136,7 @@ const latestStats = stats[0];
   }, []);
 
 
-const totalSpend = googleTotal + linkedinTotal;
+const totalSpend = googleTotal + linkedinTotal ;
 
 const adsDistribution = [
   {
@@ -183,7 +186,7 @@ const adsDistribution = [
 
       if (distributionError) throw distributionError;
       setContentDistribution(distributionData || []);
-
+console.log("distributionData",distributionData);
       // Fetch CTA performance
       const { data: ctaData, error: ctaError } = await supabase
         .from("cta_performance")
@@ -193,7 +196,7 @@ const adsDistribution = [
       if (ctaError) throw ctaError;
       setCTAPerformance(ctaData || []);
 
-      // Fetch recent content
+   
       const { data: contentData, error: contentError } = await supabase
         .from("agent_5_blog_content")
         .select("id, name, content_type, post_summary")
@@ -212,6 +215,12 @@ const adsDistribution = [
     } finally {
       setLoading(false);
     }
+
+    const linkedinPostData = await supabase
+      .from("agent_5_linkedin_posts")
+      .select("*");
+    console.log("linkedinPostData", linkedinPostData);
+
   };
 
 useEffect(() => {
@@ -225,7 +234,7 @@ useEffect(() => {
       console.error(googleError);
       return;
     }
-
+ 
     // LinkedIn Ads
     const { data: linkedinData, error: linkedinError } = await supabase
       .from("linkedin_ads_approval")
@@ -235,6 +244,11 @@ useEffect(() => {
       console.error(linkedinError);
       return;
     }
+    const  sumcontentData =  googleData?.reduce(
+      (sum, item) => sum + Number(item.spend || 0),
+      0
+    ) ?? 0;
+    console.log("sumcontentData",sumcontentData); 
 
     const googleSum =
       googleData?.reduce(
@@ -242,18 +256,31 @@ useEffect(() => {
         0
       ) ?? 0;
 
+
+ 
     const linkedinSum =
       linkedinData?.reduce(
         (sum, item) => sum + Number(item.total_budget || 0),
         0
       ) ?? 0;
-
+const linedinPostData = linkedinData?.reduce(
+  (sum, item) => sum + Number(item.total_budget || 0),
+  0
+) ?? 0;
+console.log("linedinPostData",linedinPostData);
+    setLinkedinPostData(linedinPostData);
     setGoogleTotal(googleSum);
     setLinkedinTotal(linkedinSum);
+    setSumcontentData(sumcontentData);
+
   };
 
   fetchAdsSpend();
 }, []);
+
+const totalData = googleTotal + linkedinTotal  + sumcontentData  + linedinPostData ; 
+console.log("totalData",totalData);
+
 
 
  
@@ -276,16 +303,23 @@ useEffect(() => {
     );
   }
 
-const totalContentGenerated = stats?.reduce(
-  (sum, stat) => sum + (stat.content_generated || 0),
-  0
-) ?? 0;
+// const totalContentGenerated = stats?.reduce(
+//   (sum, stat) => sum + (stat.content_generated || 0),
+//   0
+// ) ?? 0;
 
 const totalVoiceCompliance = stats?.reduce(
   (sum, stat) => sum + (stat.voice_compliance || 0),
   0
 ) ?? 0;
 console.log("recentContent",recentContent);
+
+
+
+const total  = contentDistribution.length
+console.log("total",total);
+
+
 
   return (
     <ErrorBoundary>
@@ -300,12 +334,12 @@ console.log("recentContent",recentContent);
         </div>
       </div>
 
-      {/* KPI Cards */}
-     {stats.length > 0 && (
+    
+     {stats.length > 0 ? (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
     <StatCard
       title="Content Generated"
-      value={totalContentGenerated}
+      value={totalData.toFixed(0)}
       change={latestStats?.content_generated_change}
       icon={<FileText className="h-5 w-5" />}
       subtitle="Total"
@@ -318,6 +352,10 @@ console.log("recentContent",recentContent);
       icon={<CheckCircle className="h-5 w-5" />}
       subtitle="Total"
     />
+  </div>
+):(
+  <div className="text-center text-muted-foreground">
+    No data available.
   </div>
 )}
 
