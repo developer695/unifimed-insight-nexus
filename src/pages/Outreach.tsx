@@ -180,8 +180,8 @@ const paginatedLeads = inReviewLeads.slice(
         .from("outreach_stats")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
+     
+console.log("sata data chekcxedr", stats);
 
       if (statsError) throw statsError;
       setStats(statsData);
@@ -220,6 +220,13 @@ const paginatedLeads = inReviewLeads.slice(
       setLoading(false);
     }
   };
+
+  
+  const totalSent =  stats ? stats.reduce((sum , stat) => sum + stat.total_sent, 0) : 0;
+  const totalReplies = stats ? stats.reduce((sum , stat) => sum + stat.replies_count, 0) : 0;
+
+
+const replyRate = totalSent > 0 ? (totalReplies / totalSent) * 100 : 0;
 
   const fetchInReviewLeads = async () => {
     try {
@@ -454,6 +461,7 @@ const paginatedLeads = inReviewLeads.slice(
       </div>
     );
   }
+console.log("sta",stats);
 
   return (
     <div className="space-y-6">
@@ -472,22 +480,22 @@ const paginatedLeads = inReviewLeads.slice(
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <StatCard
             title="Total Sent"
-            value={stats.total_sent.toLocaleString()}
+            value={totalSent}
             change={stats.total_sent_change}
             icon={<Mail className="h-5 w-5" />}
-            subtitle="Last 30 days"
+            subtitle="Total emails sent"
           />
           <StatCard
             title="Reply Rate"
-            value={`${stats.reply_rate}%`}
+            value={`${replyRate.toFixed(2)}%`}
             change={stats.reply_rate_change}
             icon={<MessageSquare className="h-5 w-5" />}
-            subtitle={`${stats.replies_count} replies`}
+            subtitle={`Reply rate `}
           />
         </div>
       )}
 
-      {/* Charts */}
+      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>

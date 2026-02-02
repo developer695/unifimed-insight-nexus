@@ -5,6 +5,7 @@ import { FileText, Clock, Database, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { log } from "console";
 type IntegrationStatus = {
   id: number;
   integration: string;
@@ -69,9 +70,10 @@ const Analytics = () => {
       setErrorReports(null);
 
       const { data, error } = await supabase
-        .from("Agent 9: Analytics & Reporting Engine")
+        .from("agent9_analytics_reporting")
         .select("*")
-        .order("name", { ascending: true });  // use any column that really exists
+        .order("id", { ascending: true });  // use any column that really exists
+console.log("dta report",data);
 
       if (error) {
         console.error(error);
@@ -85,7 +87,7 @@ const Analytics = () => {
           last_sent: row.last_sent,   // map exactly from DB
           template: row.template,
         }));
-        setScheduledReports(mapped);
+        setScheduledReports(data);
       }
 
       setLoadingReports(false);
@@ -184,6 +186,7 @@ const Analytics = () => {
 
 
   }, []);
+console.log("scheduledReports",scheduledReports);
 
   return (
     <div className="space-y-6">
@@ -203,6 +206,7 @@ const Analytics = () => {
           </div>
         ) : dashboardStats ? (
           <>
+            <div className="h-full">
             <StatCard
               title="Reports Generated"
               value={dashboardStats.reports_generated?.toString() ?? "—"}
@@ -232,6 +236,7 @@ const Analytics = () => {
               change={dashboardStats.marketing_roi_change ?? 0}
               icon={<TrendingUp className="h-4 w-4" />}
             />
+            </div>
           </>
         ) : (
           <div className="col-span-4 text-sm text-muted-foreground">
@@ -241,11 +246,11 @@ const Analytics = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+        <Card className="h-[450px] flex flex-col">
           <CardHeader>
             <CardTitle>Report Generation Trends</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1">
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={reportGenerationData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -303,11 +308,11 @@ const Analytics = () => {
         </Card> */}
       </div>
 
-      <Card>
+      <Card className="h-[450px] flex flex-col">
         <CardHeader>
           <CardTitle>Integration Status</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 overflow-y-auto">
           {loadingIntegrations ? (
             <div className="text-sm text-muted-foreground">Loading integrations…</div>
           ) : errorIntegrations ? (
@@ -360,39 +365,113 @@ const Analytics = () => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Scheduled Reports</CardTitle>
+      <Card className="border-border shadow-lg h-[450px] flex flex-col">
+        <CardHeader className="border-b border-border bg-gradient-to-r from-primary/5 to-primary/10">
+          <CardTitle className="text-xl font-bold">Scheduled Reports</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
+        <CardContent className="p-0 flex-1 flex flex-col">
+          <style>{`
+            .scroll-container::-webkit-scrollbar {
+              height: 8px;
+            }
+            .scroll-container::-webkit-scrollbar-track {
+              background: hsl(var(--muted));
+              border-radius: 4px;
+            }
+            .scroll-container::-webkit-scrollbar-thumb {
+              background: hsl(var(--primary));
+              border-radius: 4px;
+              transition: background 0.2s;
+            }
+            .scroll-container::-webkit-scrollbar-thumb:hover {
+              background: hsl(var(--primary) / 0.8);
+            }
+          `}</style>
+          <div className="scroll-container overflow-x-auto flex-1">
             <table className="w-full">
-              <thead>
-  <tr>
-    <th>Date</th>
-    <th>Total Leads</th>
-    <th>Qualified</th>
-    <th>Meetings</th>
-    <th>Active Campaigns</th>
-    <th>Ad Budget</th>
-    <th>High Alerts</th>
-  </tr>
-</thead>
-           <tbody>
-  {scheduledReports.map((row: any) => (
-    <tr key={row.id}>
-      <td>{new Date(row.created_at).toLocaleDateString()}</td>
-      <td>{row.total_leads}</td>
-      <td>{row.qualified_leads}</td>
-      <td>{row.meetings_scheduled}</td>
-      <td>{row.active_campaigns}</td>
-      <td>${row.total_ad_budget}</td>
-      <td className="text-red-500 font-semibold">
-        {row.high_severity_alerts}
-      </td>
-    </tr>
-  ))}
-</tbody>
+              <thead className="sticky top-0 bg-gradient-to-r from-primary/10 to-primary/5 border-b-2 border-primary/20 z-10">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-foreground whitespace-nowrap">Date</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-foreground whitespace-nowrap">Total Leads</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-foreground whitespace-nowrap">Lead Review %</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-foreground whitespace-nowrap">Leads to Review</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-foreground whitespace-nowrap">Active Campaigns</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-foreground whitespace-nowrap">Ad Budget</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-foreground whitespace-nowrap">Paused Budget</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-foreground whitespace-nowrap">Top SEO Keyword</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-foreground whitespace-nowrap">Keyword Search Volume</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-foreground whitespace-nowrap">SEO Opportunity Keywords</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-foreground whitespace-nowrap">Qualified Leads</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-foreground whitespace-nowrap">Meetings Scheduled</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-foreground whitespace-nowrap">High Alerts</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {scheduledReports.length > 0 ? (
+                  scheduledReports.map((row: any, index: number) => (
+                    <tr
+                      key={row.id}
+                      className={`transition-colors ${
+                        index % 2 === 0
+                          ? "bg-background hover:bg-primary/5"
+                          : "bg-muted/30 hover:bg-primary/5"
+                      }`}
+                    >
+                      <td className="px-6 py-4 text-sm text-foreground font-medium whitespace-nowrap">
+                        {new Date(row.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-foreground whitespace-nowrap">
+                        {row.total_leads || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-foreground whitespace-nowrap">
+                        {row.lead_review_conversion_pct || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-foreground whitespace-nowrap">
+                        {row.leads_moved_to_review || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-foreground whitespace-nowrap">
+                        {row.active_campaigns || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-foreground whitespace-nowrap font-semibold">
+                        ${row.total_ad_budget || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-foreground whitespace-nowrap font-semibold">
+                        ${row.paused_budget_at_risk || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-primary font-medium whitespace-nowrap">
+                        {row.top_seo_keyword || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-foreground whitespace-nowrap">
+                        {row.top_keyword_search_volume || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-foreground whitespace-nowrap">
+                        {row.seo_opportunity_keywords || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-foreground whitespace-nowrap">
+                        {row.qualified_leads || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-foreground whitespace-nowrap">
+                        {row.meetings_scheduled || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-bold whitespace-nowrap">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                          row.high_severity_alerts && row.high_severity_alerts > 0
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-success/10 text-success"
+                        }`}>
+                          {row.high_severity_alerts || "0"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={13} className="px-6 py-8 text-center text-muted-foreground">
+                      No scheduled reports available
+                    </td>
+                  </tr>
+                )}
+              </tbody>
             </table>
           </div>
         </CardContent>

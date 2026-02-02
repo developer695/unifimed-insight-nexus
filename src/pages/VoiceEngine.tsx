@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, ReactNode } from "react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,47 @@ const supabase =
   supabaseUrl && supabaseAnonKey
     ? createClient(supabaseUrl, supabaseAnonKey)
     : null;
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("VoiceEngine Error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+          <div className="text-center">
+            <p className="text-destructive mb-4">
+              {this.state.error?.message || "An unexpected error occurred"}
+            </p>
+            <Button onClick={() => window.location.reload()}>Reload Page</Button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 interface VoiceEngineStats {
   id: string;
@@ -75,18 +116,41 @@ interface RecentContent {
 }
 
 export default function VoiceEngine() {
-  const [stats, setStats] = useState<VoiceEngineStats | null>(null);
+const [stats, setStats] = useState<VoiceEngineStats[]>([]);
   const [contentDistribution, setContentDistribution] = useState<
     ContentDistribution[]
   >([]);
+  const [googleTotal, setGoogleTotal] = useState(0);
+const [linkedinTotal, setLinkedinTotal] = useState(0);
+
   const [ctaPerformance, setCTAPerformance] = useState<CTAPerformance[]>([]);
   const [recentContent, setRecentContent] = useState<RecentContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+const latestStats = stats[0];
   useEffect(() => {
     fetchData();
   }, []);
+
+
+const totalSpend = googleTotal + linkedinTotal;
+
+const adsDistribution = [
+  {
+    name: "Google Ads",
+    value: totalSpend > 0
+      ? Number(((googleTotal / totalSpend) * 100).toFixed(1))
+      : 0,
+    color: "#4285F4",
+  },
+  {
+    name: "LinkedIn Ads",
+    value: totalSpend > 0
+      ? Number(((linkedinTotal / totalSpend) * 100).toFixed(1))
+      : 0,
+    color: "#0A66C2",
+  },
+];
 
   const fetchData = async () => {
     try {
@@ -105,8 +169,7 @@ export default function VoiceEngine() {
         .from("voice_engine_stats")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
+    
 
       if (statsError) throw statsError;
       setStats(statsData);
@@ -151,6 +214,49 @@ export default function VoiceEngine() {
     }
   };
 
+useEffect(() => {
+  const fetchAdsSpend = async () => {
+    // Google Ads
+    const { data: googleData, error: googleError } = await supabase
+      .from("google_campaigns")
+      .select("spend");
+
+    if (googleError) {
+      console.error(googleError);
+      return;
+    }
+
+    // LinkedIn Ads
+    const { data: linkedinData, error: linkedinError } = await supabase
+      .from("linkedin_ads_approval")
+      .select("total_budget");
+
+    if (linkedinError) {
+      console.error(linkedinError);
+      return;
+    }
+
+    const googleSum =
+      googleData?.reduce(
+        (sum, item) => sum + Number(item.spend || 0),
+        0
+      ) ?? 0;
+
+    const linkedinSum =
+      linkedinData?.reduce(
+        (sum, item) => sum + Number(item.total_budget || 0),
+        0
+      ) ?? 0;
+
+    setGoogleTotal(googleSum);
+    setLinkedinTotal(linkedinSum);
+  };
+
+  fetchAdsSpend();
+}, []);
+
+
+ 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-200px)]">
@@ -170,8 +276,20 @@ export default function VoiceEngine() {
     );
   }
 
+const totalContentGenerated = stats?.reduce(
+  (sum, stat) => sum + (stat.content_generated || 0),
+  0
+) ?? 0;
+
+const totalVoiceCompliance = stats?.reduce(
+  (sum, stat) => sum + (stat.voice_compliance || 0),
+  0
+) ?? 0;
+console.log("recentContent",recentContent);
+
   return (
-    <div className="space-y-6">
+    <ErrorBoundary>
+      <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -183,24 +301,26 @@ export default function VoiceEngine() {
       </div>
 
       {/* KPI Cards */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <StatCard
-            title="Content Generated"
-            value={stats.content_generated.toLocaleString()}
-            change={stats.content_generated_change}
-            icon={<FileText className="h-5 w-5" />}
-            subtitle="Last 30 days"
-          />
-          <StatCard
-            title="Voice Compliance"
-            value={stats.voice_compliance}
-            change={stats.voice_compliance_change}
-            icon={<CheckCircle className="h-5 w-5" />}
-            subtitle="Score out of 100"
-          />
-        </div>
-      )}
+     {stats.length > 0 && (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <StatCard
+      title="Content Generated"
+      value={totalContentGenerated}
+      change={latestStats?.content_generated_change}
+      icon={<FileText className="h-5 w-5" />}
+      subtitle="Total"
+    />
+
+    <StatCard
+      title="Voice Compliance"
+      value={totalVoiceCompliance}
+      change={latestStats?.voice_compliance_change}
+      icon={<CheckCircle className="h-5 w-5" />}
+      subtitle="Total"
+    />
+  </div>
+)}
+
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -210,36 +330,37 @@ export default function VoiceEngine() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={contentDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) =>
-                    `${name} ${(percent * 100).toFixed(0)}%`
-                  }
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {contentDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "0.5rem",
-                  }}
-                />
-              </PieChart>
+             <PieChart>
+  <Pie
+    data={contentDistribution}
+    cx="50%"
+    cy="50%"
+    labelLine={false}
+    label={({ name, percent }) =>
+      `${name} ${(percent * 100).toFixed(0)}%`
+    }
+    outerRadius={100}
+    dataKey="value"
+  >
+    {contentDistribution.map((entry, index) => (
+      <Cell key={index} fill={entry.color} />
+    ))}
+  </Pie>
+
+  <Tooltip
+    contentStyle={{
+      backgroundColor: "hsl(var(--card))",
+      border: "1px solid hsl(var(--border))",
+      borderRadius: "0.5rem",
+    }}
+  />
+</PieChart>
+
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>CTA Performance Comparison</CardTitle>
           </CardHeader>
@@ -283,7 +404,7 @@ export default function VoiceEngine() {
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
 
       {/* Recent Content Table */}
@@ -327,6 +448,7 @@ export default function VoiceEngine() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }
