@@ -225,6 +225,46 @@ export const useGoogleAds = () => {
         setSelectedGoogleAd(null);
     };
 
+    // Permanently delete a Google Ad from the database
+    const deleteGoogleAd = async (id: string) => {
+        try {
+            setGoogleUpdatingId(id);
+
+            const { error } = await supabase
+                .from("ad_variations")
+                .delete()
+                .eq("id", id);
+
+            if (error) throw error;
+
+            // Send webhook for delete action
+            await sendGoogleAdsWebhook("GOOGLE_ADS_CAMPAIGN_PERMANENTLY_DELETED", id, {
+                action: 'PERMANENT_DELETE',
+                timestamp: new Date().toISOString()
+            });
+
+            // Remove from local state
+            setGoogleAds((prev) => prev.filter((ad) => ad.id !== id));
+
+            toast({
+                title: "Success",
+                description: "Ad campaign permanently deleted.",
+            });
+
+            return true;
+        } catch (error) {
+            console.error("Error deleting Google Ad:", error);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to delete ad campaign.",
+            });
+            return false;
+        } finally {
+            setGoogleUpdatingId(null);
+        }
+    };
+
     return {
         googleAds,
         googleLoading,
@@ -236,6 +276,7 @@ export const useGoogleAds = () => {
         handleGoogleAdsUpdate,
         handleGoogleAdViewDetails,
         handleGoogleAdCloseModal,
+        deleteGoogleAd,
         setGoogleUpdatingId,
         setIsGoogleModalOpen,
         setSelectedGoogleAd

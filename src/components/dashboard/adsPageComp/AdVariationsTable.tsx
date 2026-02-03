@@ -2,23 +2,25 @@ import { AdVariation } from "@/types/ads";
 import { AdApprovalActions } from "./AdApprovalActions";
 import { AdStatusBadge } from "./AdStatusBadge";
 import { useState } from "react";
+import Swal from "sweetalert2";
 
 interface AdVariationsTableProps {
     ads: AdVariation[];
     onStatusChange: (id: string, status: string, adminName: string) => Promise<void>;
     onViewDetails: (ad: AdVariation) => void;
     updatingId: string | null;
+    onDelete?: (id: string) => Promise<boolean>;
 }
 
 export function AdVariationsTable({
     ads,
     onStatusChange,
     onViewDetails,
-    updatingId
+    updatingId,
+    onDelete
+}: AdVariationsTableProps) {
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
-}: AdVariationsTableProps)
-
-{
     if (ads.length === 0) {
         return (
             <div className="text-center py-8 text-muted-foreground">
@@ -26,6 +28,37 @@ export function AdVariationsTable({
             </div>
         );
     }
+
+    const handleDelete = async (id: string, campaignName: string) => {
+        const result = await Swal.fire({
+            title: 'Are you sure?',
+            text: `You are about to permanently delete "${campaignName}". This action cannot be undone!`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel'
+        });
+
+        if (result.isConfirmed) {
+            if (onDelete) {
+                setDeletingId(id);
+                const success = await onDelete(id);
+                setDeletingId(null);
+
+                if (success) {
+                    Swal.fire({
+                        title: 'Deleted!',
+                        text: 'The ad campaign has been permanently deleted.',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            }
+        }
+    };
 const [currentpage, setCurrentpage] = useState<number>(1);
 const itemPergage = 10;
 const indexOfLastItem = currentpage * itemPergage;
@@ -53,6 +86,7 @@ const goToPreviousPage = ()=>{
                         <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Budget</th>
                         <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Status</th>
                         <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Actions</th>
+                        <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">Delete</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -61,13 +95,13 @@ const goToPreviousPage = ()=>{
                             <td className="py-3 px-4 font-medium">
                                 <div className="font-medium">{ad.campaign_name}</div>
                                 <div className="text-xs text-muted-foreground truncate max-w-[200px]">
-                                    ID: {ad.campaign_id}
+                                  {ad.campaign_id}
                                 </div>
                             </td>
                             <td className="py-3 px-4">
                                 <div className="font-medium">{ad.ad_group_name}</div>
                                 <div className="text-xs text-muted-foreground truncate max-w-[200px]">
-                                    ID: {ad.ad_group_id}
+                                {ad.ad_group_id}
                                 </div>
                             </td>
                             <td className="py-3 px-4">
@@ -102,6 +136,15 @@ const goToPreviousPage = ()=>{
                                     onViewDetails={onViewDetails}
                                     isUpdating={updatingId === ad.id}
                                 />
+                            </td>
+                            <td className="py-3 px-4">
+                                <button
+                                    onClick={() => handleDelete(ad.id, ad.campaign_name)}
+                                    disabled={deletingId === ad.id}
+                                    className={`text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed`}
+                                >
+                                    {deletingId === ad.id ? 'Deleting...' : 'Delete'}
+                                </button>
                             </td>
                         </tr>
                     ))}

@@ -381,7 +381,7 @@ const totalPages = Math.ceil(sortedKeywords.length / itemPergage);
                 {refreshMessage}
               </p>
               <p className="text-muted-foreground text-sm mt-2 text-center">
-                Please wait while n8n processes your request...
+                Please wait while Ai processes your request...
               </p>
             </div>
           </div>

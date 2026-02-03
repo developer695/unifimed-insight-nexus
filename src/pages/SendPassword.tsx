@@ -292,7 +292,7 @@ export default function SendPassword() {
               if (step === "password") {
                 setStep("email");
               } else {
-                navigate("/auth");
+                navigate("/login");
               }
             }}
             className="text-sm text-slate-600 hover:text-blue-600 transition-colors"

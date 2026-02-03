@@ -396,9 +396,7 @@ useEffect(() => {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg">
-                  <span className="text-2xl">🎯</span>
-                </div>
+              
                 <span className="text-white font-bold text-sm uppercase tracking-wide">
                   Strategic Consultation
                 </span>
@@ -499,7 +497,7 @@ useEffect(() => {
           <section className="py-20 md:py-28 bg-gradient-to-br from-gray-50 to-teal-50">
             <div className="max-w-5xl mx-auto px-6 lg:px-8">
               <div className="text-center mb-16">
-                <h2 className="text-4xl md:text-5xl font-extrabold mb-4 text-primary">
+                <h2 className="text-4xl md:text-5xl font-extrabold mb-4 text-gray-900">
                   {landing_page.credibility_section.title}
                 </h2>
                 <div className="w-32 h-1.5 bg-primary mx-auto rounded-full"></div>
@@ -511,9 +509,7 @@ useEffect(() => {
                     key={index}
                     className="group flex items-start gap-6 bg-white p-6 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 transform hover:translate-x-2 border-l-4 border-primary"
                   >
-                    <div className="flex-shrink-0 w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform">
-                      ✓
-                    </div>
+                   
                     <p className="text-gray-700 text-lg leading-relaxed pt-2">
                       {point}
                     </p>

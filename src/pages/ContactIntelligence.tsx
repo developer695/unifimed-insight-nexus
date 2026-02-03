@@ -40,6 +40,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/lib/supabase";
+import { set } from "date-fns";
 
 interface ContactIntelligenceStats {
   id: number;
@@ -77,11 +78,18 @@ export default function ContactIntelligence() {
 
   const [stats, setStats] = useState<AggregatedStats | null>(null);
   const [domainData, setDomainData] = useState<DomainNotExist[]>([]);
+  const [enrichedLeadsData, setEnrichedLeadsData] = useState<DomainNotExist[]>([]);
   const [loading, setLoading] = useState(true);
   const [domainLoading, setDomainLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [domainError, setDomainError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>("all");
+
+  const [tablePage , setTablePage] = useState<string>("Domains Not Found");
+  const tabName = ["Enriched Leads","Domains Not Found"];
+
+  // Computed table data based on selected tab
+  const tableData = tablePage === "Domains Not Found" ? domainData : enrichedLeadsData;
 
   useEffect(() => {
     fetchData();
@@ -135,16 +143,14 @@ export default function ContactIntelligence() {
 
       if (statsError) throw statsError;
 
-      // ALWAYS aggregate the data - sum ALL rows from the table
       if (statsData && statsData.length > 0) {
         const aggregated: AggregatedStats = {
           total_leads: statsData.reduce((sum, record) => sum + record.total_leads, 0),
           enriched_leads: statsData.reduce((sum, record) => sum + record.enriched_leads, 0),
-          pdf_url: statsData[0].pdf_url, // Use the most recent PDF
+          pdf_url: statsData[0].pdf_url,
         };
         setStats(aggregated);
       } else {
-        // No data found
         setStats(null);
       }
 
@@ -155,6 +161,27 @@ export default function ContactIntelligence() {
       setLoading(false);
     }
   };
+
+const fetchEnrichedTableData = async () => {
+  try {
+    setDomainLoading(true);
+    setDomainError(null);
+
+    const { data, error } = await supabase
+      .from("enriched_leads")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    setEnrichedLeadsData(data || []);
+  } catch (err) {
+    setDomainError("Failed to load enriched leads");
+  } finally {
+    setDomainLoading(false);
+  }
+};
+
 
   const fetchDomainData = async () => {
     try {
@@ -206,6 +233,17 @@ export default function ContactIntelligence() {
       }
     ];
   };
+const handleTabClick = (tab: string) => {
+  setTablePage(tab);
+
+  if (tab === "Domains Not Found") {
+    fetchDomainData();
+  }
+
+  if (tab === "Enriched Leads") {
+    fetchEnrichedTableData();
+  }
+};
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFilter(e.target.value as FilterType);
@@ -334,7 +372,7 @@ export default function ContactIntelligence() {
       )}
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Lead Enrichment Status</CardTitle>
@@ -369,12 +407,31 @@ export default function ContactIntelligence() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
 
       {/* Domain Not Exist Table */}
+  <div>
+      {/* Tabs */}
+      <div className="flex gap-4 mb-4">
+        {tabName.map((tab) => (
+          <button
+            key={tab}
+            className={`px-4 py-2 rounded ${
+              tablePage === tab ? "bg-primary text-white" : "bg-gray-200"
+            }`}
+            onClick={() => handleTabClick(tab)}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Table Card */}
       <Card>
         <CardHeader>
-          <CardTitle>Domains Not Found ({domainData.length})</CardTitle>
+          <CardTitle>
+            {tablePage} ({tableData.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {domainLoading ? (
@@ -384,7 +441,9 @@ export default function ContactIntelligence() {
           ) : domainError ? (
             <div className="text-center py-8">
               <p className="text-destructive mb-4">{domainError}</p>
-              <Button onClick={fetchDomainData} size="sm">Retry</Button>
+              <Button onClick={() => handleTabClick(tablePage)} size="sm">
+                Retry
+              </Button>
             </div>
           ) : (
             <div className="rounded-md border">
@@ -404,14 +463,14 @@ export default function ContactIntelligence() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {domainData.length === 0 ? (
+                  {tableData.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                         No data found
                       </TableCell>
                     </TableRow>
                   ) : (
-                    domainData.map((row) => (
+                    tableData.map((row) => (
                       <TableRow key={row.id}>
                         <TableCell>{row.first_name || '-'}</TableCell>
                         <TableCell>{row.last_name || '-'}</TableCell>
@@ -446,6 +505,7 @@ export default function ContactIntelligence() {
           )}
         </CardContent>
       </Card>
+    </div>
     </div>
   );
 }

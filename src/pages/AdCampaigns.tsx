@@ -61,6 +61,7 @@ export default function AdCampaigns() {
     handleGoogleAdsUpdate,
     handleGoogleAdViewDetails,
     handleGoogleAdCloseModal,
+    deleteGoogleAd,
   } = useGoogleAds();
 
   const {
@@ -433,6 +434,7 @@ export default function AdCampaigns() {
                   onViewDetails={handleGoogleAdViewDetails}
                   onStatusChange={handleGoogleAdsStatusChange}
                   onRefresh={fetchGoogleAds}
+                  onDelete={deleteGoogleAd}
                 />
               </div>
             </TabsContent>

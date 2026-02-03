@@ -385,20 +385,20 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="text-center md:text-left">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight animate-fade-in">
+              <h1 className="text-4xl md:text-3xl lg:text-4xl font-bold mb-6 leading-tight animate-fade-in">
                 {landing_page.hero_section.headline}
               </h1>
               <p className="text-xl md:text-2xl mb-6 opacity-95 leading-relaxed">
                 {landing_page.hero_section.subheadline}
               </p>
               {landing_page.hero_section.supporting_text && (
-                <div className="flex flex-wrap gap-4 justify-center md:justify-start mb-8">
+                <div className="flex flex-wrap  gap-4 justify-center md:justify-start mb-8">
                   {landing_page.hero_section.supporting_text
                     .split("·")
                     .map((text, i) => (
                       <span
                         key={i}
-                        className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium"
+                        className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded text-sm font-medium"
                       >
                         {text.trim()}
                       </span>
@@ -429,11 +429,15 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
               <div className="hidden md:block">
                 <img
                   src={landing_page.hero_section.hero_image_url}
+                  
                   alt={
                     landing_page.hero_section.hero_image_alt_text ||
                     "Hero image"
                   }
                   className="rounded-2xl shadow-2xl w-full h-auto transform hover:scale-105 transition-transform duration-500"
+                loading="eager"
+  fetchPriority="high"
+  decoding="async"
                 />
               </div>
             )}
@@ -449,62 +453,88 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
             {landing_page.value_sections.map((section, index) => (
               <section
                 key={index}
-                className="py-20 md:py-28 bg-gradient-to-b from-white to-gray-50"
+                className="py-20  md:py-28 bg-gradient-to-b from-white to-gray-50"
                 id={index === 0 ? "learn-more" : undefined}
               >
-                <div className="max-w-7xl mx-auto px-6 lg:px-8">
-                  <div className="grid md:grid-cols-2 gap-12 items-center">
-                    <div
-                      className={index % 2 === 0 ? "md:order-1" : "md:order-2"}
-                    >
-                      <h2 className="text-4xl md:text-5xl font-bold mb-8 text-primary leading-tight">
-                        {section.title}
-                      </h2>
-                      <div className="space-y-6">
-                        {section.body.split("\n").map((line, i) => {
-                          const [title, ...descParts] = line.split("–");
-                          const description = descParts.join("–");
-                          return (
-                            <div
-                              key={i}
-                              className="flex gap-4 p-4 rounded-xl hover:bg-white hover:shadow-lg transition-all duration-300 group"
-                            >
-                              <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform">
-                                ✓
-                              </div>
-                              <div>
-                                <h3 className="font-bold text-primary text-lg mb-1">
-                                  {title.replace("•", "").trim()}
-                                </h3>
-                                {description && (
-                                  <p className="text-gray-600 leading-relaxed">
-                                    {description.trim()}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    {section.image_url && (
-                      <div
-                        className={
-                          index % 2 === 0 ? "md:order-2" : "md:order-1"
-                        }
-                      >
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl transform rotate-3"></div>
-                          <img
-                            src={section.image_url}
-                            alt={section.image_alt_text || "Feature image"}
-                            className="relative rounded-2xl shadow-2xl w-full h-auto transform hover:scale-105 transition-transform duration-500"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
+              <div className="max-w-7xl mx-auto px-6 lg:px-8">
+  <div className="grid md:grid-cols-2 gap-12 items-start">
+    
+    {/* TEXT SIDE */}
+    <div className={index % 2 === 0 ? "md:order-1" : "md:order-2"}>
+      <h2 className="text-4xl md:text-4xl font-bold mb-8 text-gray-900 leading-tight">
+        {section.title}
+      </h2>
+
+      <div className="space-y-6">
+        {typeof section?.body === "string" &&
+          section.body
+            .split("\n")
+            .filter(line => line.trim() !== "")
+            .map((line, i) => {
+
+              // Support –, -, or :
+              let separator = "–";
+              if (line.includes("-")) separator = "-";
+              if (line.includes(":")) separator = ":";
+
+              const parts = line.split(separator);
+
+              const title = parts[0]
+                ?.replace("•", "")
+                ?.trim();
+
+              const description = parts
+                .slice(1)
+                .join(separator)
+                ?.trim();
+
+              return (
+                <div
+                  key={i}
+                  className="p-4 rounded-xl hover:bg-white hover:shadow-lg transition-all duration-300"
+                >
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                    {title}
+                  </h3>
+
+                  {description && (
+                    <p className="text-gray-600 leading-relaxed">
+                      {description}
+                    </p>
+                  )}
                 </div>
+              );
+            })}
+      </div>
+    </div>
+
+    {/* IMAGE SIDE */}
+    {Boolean(section?.image_url) && (
+      <div className={index % 2 === 0 ? "md:order-2" : "md:order-1"}>
+        <div className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-gray-100">
+          
+          {/* Skeleton */}
+          <div className="absolute inset-0 animate-pulse bg-gray-200" />
+
+          <img
+            src={section.image_url}
+            alt={section.image_alt_text || "Feature image"}
+            loading="lazy"
+            decoding="async"
+            onLoad={(e) => {
+              e.currentTarget.previousSibling?.classList.add("hidden");
+            }}
+            onError={(e) => {
+              e.currentTarget.src = "/fallback-image.png";
+            }}
+            className="relative w-full h-full object-cover rounded-2xl shadow-2xl transform hover:scale-105 transition-transform duration-500"
+          />
+        </div>
+      </div>
+    )}
+  </div>
+</div>
+
               </section>
             ))}
           </>

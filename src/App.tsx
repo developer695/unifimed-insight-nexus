@@ -38,6 +38,7 @@ import LinkedinReplyMessages from './pages/LinkedinReplyMessages';
 import EmailReplyMessages from './pages/EmailReplyMessages';
 import Message from './components/dashboard/Message';
 import SendPassword from './pages/SendPassword';
+import ResetPasswordPage from './pages/ResetPassword';
 
 declare global {
   interface Window {
@@ -76,6 +77,8 @@ const App = () => {
           <Routes>
             <Route path='/login' element={<Login />} />
             <Route path='/send-password' element={<SendPassword />} />
+            <Route path='/reset-password' element={<ResetPasswordPage />} />
+
 
             <Route
               path='/'

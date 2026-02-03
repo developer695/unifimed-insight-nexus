@@ -94,9 +94,9 @@ export function Login() {
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
-<button className="text-sm text-blue-600 hover:underline" onClick={() => navigate("/send-password")}>
+{/* <button className="text-sm text-blue-600 hover:underline" onClick={() => navigate("/send-password")}>
               Forgot password?
-            </button>
+            </button> */}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Signing in..." : "Sign In"}
             </Button>

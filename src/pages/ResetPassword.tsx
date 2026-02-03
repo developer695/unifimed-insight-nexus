@@ -11,7 +11,7 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     // 1️⃣ Check existing session first
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }) => { 
       if (data.session) {
         setLoading(false); // ✅ already in recovery session
       }

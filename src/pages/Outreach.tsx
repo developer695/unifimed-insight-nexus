@@ -39,6 +39,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import Swal from "sweetalert2";
 
 interface InReviewLead {
   id: number;
@@ -436,6 +437,44 @@ const replyRate = totalSent > 0 ? (totalReplies / totalSent) * 100 : 0;
     return hasChanges && allFieldsComplete;
   };
 
+  const handleDelete = async (leadId: number) => {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "This lead will be permanently deleted!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!',
+    })
+    if(!result.isConfirmed) return;
+    try {
+      setIsUpdating(true);
+    
+      await supabase!
+        .from("In Review Leads")
+        .delete()
+        .eq("id", leadId);
+   if(error) throw error;
+      await fetchInReviewLeads();
+        Swal.fire({
+      title: "Deleted!",
+      text: "Lead has been deleted successfully.",
+      icon: "success",
+      timer: 1500,
+      showConfirmButton: false,
+    });
+    } catch (error) {
+      Swal.fire({
+      title: "Error!",
+      text: "Something went wrong while deleting the lead.",
+      icon: "error",
+    });
+    console.error("Error deleting lead:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  }
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
@@ -587,7 +626,7 @@ console.log("sta",stats);
         </Card>
       </div>
 
-      {/* In Review Leads */}
+    
       <Card>
         <CardHeader>
           <CardTitle>In Review Leads</CardTitle>
@@ -641,7 +680,7 @@ console.log("sta",stats);
                       <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
                         Outreach Channel
                       </th>
-                      <th className="text-left py-3 px-4 font-medium text-sm text-muted-foreground">
+                      <th className="text-left py-3 text-center px-4 font-medium text-sm text-muted-foreground">
                         Action
                       </th>
                     </tr>
@@ -658,7 +697,7 @@ console.log("sta",stats);
                         <td className="py-3 px-4 text-sm">
                           {lead.company_name || "N/A"}
                         </td>
-                        {/* Display the data from database */}
+                      
                         <td className="py-3 px-4 text-sm">
                           <div className="font-medium">{lead.stage || "-"}</div>
                         </td>
@@ -677,7 +716,7 @@ console.log("sta",stats);
                             {lead.cluster || "-"}
                           </div>
                         </td>
-                        {/* Rest of your existing columns */}
+                      
                         <td className="py-3 px-4">
                           <Popover>
                             <PopoverTrigger asChild>
@@ -816,6 +855,16 @@ console.log("sta",stats);
                           >
                             {isUpdating ? "Updating..." : "Update"}
                           </Button>
+                        </td>
+                        <td className="py-3 flex  px-4">
+                          <Button
+                            onClick={() => handleDelete(lead.id)}
+                   className= "bg-red-600 hover:bg-red-700 focus:ring-red-500"
+                            size="sm"
+                          >
+                            {isUpdating ? "Updating..." : "Delete"}
+                          </Button>
+                          
                         </td>
                       </tr>
                     ))}

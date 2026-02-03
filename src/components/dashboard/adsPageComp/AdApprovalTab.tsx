@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Trash2 } from "lucide-react";
 import { AdVariationsTable } from "./AdVariationsTable";
 import { AdVariation, AdStatus } from "@/types/ads";
+import { useState } from "react";
 
 interface AdApprovalTabProps {
     ads: AdVariation[];
@@ -11,6 +12,7 @@ interface AdApprovalTabProps {
     onStatusChange: (id: string, status: AdStatus, adminName: string) => Promise<void>;
     onViewDetails: (ad: AdVariation) => void;
     onRefresh: () => Promise<void>;
+    onDelete?: (id: string) => Promise<boolean>;
 }
 
 export function AdApprovalTab({
@@ -19,13 +21,18 @@ export function AdApprovalTab({
     updatingId,
     onStatusChange,
     onViewDetails,
-    onRefresh
+    onRefresh,
+    onDelete
 }: AdApprovalTabProps) {
+    const [showDeleted, setShowDeleted] = useState(false);
+
     const pendingApprovalCount = ads.filter(ad => ad.approval_status === 'PENDING').length;
     const approvedCount = ads.filter(ad => ad.approval_status === 'APPROVED').length;
     const activeCount = ads.filter(ad => ad.status === 'ACTIVE').length;
     const pausedCount = ads.filter(ad => ad.status === 'PAUSED').length;
-    const deletedCount = ads.filter(ad => ad.status === 'DELETED').length;
+    const deletedAds = ads.filter(ad => ad.status === 'DELETED');
+    const deletedCount = deletedAds.length;
+    const activeAds = ads.filter(ad => ad.status !== 'DELETED');
 
     if (loading) {
         return (
@@ -38,7 +45,7 @@ export function AdApprovalTab({
     return (
         <div className="space-y-4">
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card>
                     <CardContent className="pt-6">
                         <div className="text-2xl font-bold text-yellow-600">{pendingApprovalCount}</div>
@@ -63,12 +70,12 @@ export function AdApprovalTab({
                         <p className="text-sm text-muted-foreground">Paused</p>
                     </CardContent>
                 </Card>
-                <Card>
+                {/* <Card>
                     <CardContent className="pt-6">
                         <div className="text-2xl font-bold text-red-600">{deletedCount}</div>
                         <p className="text-sm text-muted-foreground">Deleted</p>
                     </CardContent>
-                </Card>
+                </Card> */}
             </div>
 
             {/* Actions Bar */}
@@ -89,17 +96,21 @@ export function AdApprovalTab({
                 </Button>
             </div>
 
-            {/* Ad Variations Table */}
+            {/* Ad Variations Table (Active Campaigns) */}
             <Card>
                 <CardContent className="pt-6">
                     <AdVariationsTable
-                        ads={ads}
+                        ads={activeAds}
                         onStatusChange={onStatusChange}
                         onViewDetails={onViewDetails}
                         updatingId={updatingId}
+                        onDelete={onDelete}
                     />
                 </CardContent>
             </Card>
+
+            {/* Deleted Campaigns Section */}
+           
         </div>
     );
 }

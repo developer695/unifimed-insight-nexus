@@ -368,7 +368,7 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
               <div className="inline-block bg-white backdrop-blur-sm px-4 py-2 rounded-full text-primary text-sm font-semibold mb-6">
                 ✨ Professional Market Access Audit
               </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight">
+              <h1 className="text-4xl md:text-5xl lg:text-4xl font-extrabold mb-6 leading-tight">
                 {landing_page.hero_section.headline}
               </h1>
               <p className="text-xl md:text-2xl mb-8 opacity-90 leading-relaxed">
@@ -422,7 +422,7 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
       <section className="py-20 md:py-28 bg-white" id="learn-more">
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-extrabold mb-4 bg-primary bg-clip-text text-transparent">
+            <h2 className="text-4xl md:text-5xl font-extrabold mb-4 bg-gray-700 bg-clip-text text-transparent">
               The Hidden Costs of Poor Market Access Planning
             </h2>
             <div className="w-32 h-1.5 bg-primary mx-auto rounded-full"></div>
@@ -513,7 +513,7 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
                       <div className="inline-block bg-primary text-white px-4 py-2 rounded-full text-sm font-bold mb-6">
                         SECTION {index + 1}
                       </div>
-                      <h2 className="text-4xl md:text-5xl font-extrabold mb-8 bg-primary bg-clip-text text-transparent leading-tight">
+                      <h2 className="text-4xl md:text-5xl font-extrabold mb-8 bg-gray-700 bg-clip-text text-transparent leading-tight">
                         {section.title}
                       </h2>
                       <div className="space-y-5">
@@ -525,9 +525,7 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
                               key={i}
                               className="flex gap-4 p-5 bg-white rounded-2xl border-2 border-purple-100 hover:border-purple-300 hover:shadow-xl transition-all duration-300 group"
                             >
-                              <div className="flex-shrink-0 w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform shadow-lg">
-                                ✓
-                              </div>
+                            
                               <div>
                                 <h3 className="font-bold text-gray-900 text-lg mb-2">
                                   {title.replace("•", "").trim()}
